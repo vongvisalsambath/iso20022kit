@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AssemblyName>iso20022</AssemblyName>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>iso20022</ToolCommandName>
+    <PackageId>Iso20022Kit.Cli</PackageId>
+    <Version>0.1.0</Version>
+    <Description>Command-line tool: validate and read ISO 20022 pacs.008 and camt.053 messages, and run the Iso20022Kit conformance suite.</Description>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Iso20022Kit/Iso20022Kit.csproj" />
+  </ItemGroup>
+</Project>

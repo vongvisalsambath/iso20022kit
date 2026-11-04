@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08">
+  <FIToFICstmrCdtTrf>
+    <GrpHdr>
+      <MsgId>TSTA20261104-0001</MsgId>
+      <CreDtTm>2026-11-04T09:30:00+07:00</CreDtTm>
+      <NbOfTxs>2</NbOfTxs>
+      <CtrlSum>1500.25</CtrlSum>
+      <TtlIntrBkSttlmAmt Ccy="USD">1500.25</TtlIntrBkSttlmAmt>
+      <IntrBkSttlmDt>2026-11-04</IntrBkSttlmDt>
+      <SttlmInf>
+        <SttlmMtd>WIRE</SttlmMtd>
+      </SttlmInf>
+      <InstgAgt>
+        <FinInstnId>
+          <BICFI>TSTAKHPPXXX</BICFI>
+        </FinInstnId>
+      </InstgAgt>
+      <InstdAgt>
+        <FinInstnId>
+          <BICFI>DEMOUS33XXX</BICFI>
+        </FinInstnId>
+      </InstdAgt>
+    </GrpHdr>
+    <CdtTrfTxInf>
+      <PmtId>
+        <InstrId>INSTR-0001</InstrId>
+        <EndToEndId>INV-445</EndToEndId>
+        <TxId>TX-0001</TxId>
+        <UETR>4f2b1c9e-7a3d-4e5f-9b8a-1c2d3e4f5a6b</UETR>
+      </PmtId>
+      <IntrBkSttlmAmt Ccy="USD">1000.00</IntrBkSttlmAmt>
+      <ChrgBr>SHAR</ChrgBr>
+      <Dbtr>
+        <Nm>Sokha Chan</Nm>
+        <PstlAdr>
+          <TwnNm>Phnom Penh</TwnNm>
+          <Ctry>KH</Ctry>
+        </PstlAdr>
+      </Dbtr>
+      <DbtrAcct>
+        <Id>
+          <Othr>
+            <Id>001234567</Id>
+          </Othr>
+        </Id>
+      </DbtrAcct>
+      <DbtrAgt>
+        <FinInstnId>
+          <BICFI>TSTAKHPP</BICFI>
+        </FinInstnId>
+      </DbtrAgt>
+      <CdtrAgt>
+        <FinInstnId>
+          <BICFI>DEMOUS33</BICFI>
+        </FinInstnId>
+      </CdtrAgt>
+      <Cdtr>
+        <Nm>Acme Supplies Inc.</Nm>
+        <PstlAdr>
+          <StrtNm>Main Street</StrtNm>
+          <BldgNb>100</BldgNb>
+          <PstCd>10001</PstCd>
+          <TwnNm>New York</TwnNm>
+          <Ctry>US</Ctry>
+        </PstlAdr>
+      </Cdtr>
+      <CdtrAcct>
+        <Id>
+          <Othr>
+            <Id>987654321</Id>
+          </Othr>
+        </Id>
+      </CdtrAcct>
+      <RmtInf>
+        <Ustrd>Invoice 445</Ustrd>
+      </RmtInf>
+    </CdtTrfTxInf>
+    <CdtTrfTxInf>
+      <PmtId>
+        <EndToEndId>INV-446</EndToEndId>
+        <UETR>9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d</UETR>
+      </PmtId>
+      <IntrBkSttlmAmt Ccy="USD">500.25</IntrBkSttlmAmt>
+      <ChrgBr>DEBT</ChrgBr>
+      <Dbtr>
+        <Nm>Sokha Chan</Nm>
+      </Dbtr>
+      <DbtrAcct>
+        <Id>
+          <Othr>
+            <Id>001234567</Id>
+          </Othr>
+        </Id>
+      </DbtrAcct>
+      <DbtrAgt>
+        <FinInstnId>
+          <BICFI>TSTAKHPP</BICFI>
+        </FinInstnId>
+      </DbtrAgt>
+      <CdtrAgt>
+        <FinInstnId>
+          <BICFI>DEMOGB2L</BICFI>
+        </FinInstnId>
+      </CdtrAgt>
+      <Cdtr>
+        <Nm>Oxford Books Ltd</Nm>
+        <PstlAdr>
+          <Ctry>GB</Ctry>
+        </PstlAdr>
+      </Cdtr>
+      <CdtrAcct>
+        <Id>
+          <IBAN>GB82WEST12345698765432</IBAN>
+        </Id>
+      </CdtrAcct>
+      <Purp>
+        <Cd>GDDS</Cd>
+      </Purp>
+      <RmtInf>
+        <Ustrd>Order 2026-118</Ustrd>
+      </RmtInf>
+    </CdtTrfTxInf>
+  </FIToFICstmrCdtTrf>
+</Document>

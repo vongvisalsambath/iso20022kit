@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pacs.008.001.99">
+  <FIToFICstmrCdtTrf>
+    <GrpHdr>
+      <MsgId>DEMO-MIN-1</MsgId>
+      <CreDtTm>2026-11-04T14:05:00Z</CreDtTm>
+      <NbOfTxs>1</NbOfTxs>
+      <SttlmInf>
+        <SttlmMtd>CLRG</SttlmMtd>
+        <ClrSys>
+          <Cd>FDW</Cd>
+        </ClrSys>
+      </SttlmInf>
+    </GrpHdr>
+    <CdtTrfTxInf>
+      <PmtId>
+        <EndToEndId>E2E-1</EndToEndId>
+      </PmtId>
+      <IntrBkSttlmAmt Ccy="EUR">250.00</IntrBkSttlmAmt>
+      <IntrBkSttlmDt>2026-11-05</IntrBkSttlmDt>
+      <ChrgBr>SLEV</ChrgBr>
+      <Dbtr>
+        <Nm>Jane Doe</Nm>
+      </Dbtr>
+      <DbtrAcct>
+        <Id>
+          <IBAN>DE89370400440532013000</IBAN>
+        </Id>
+      </DbtrAcct>
+      <DbtrAgt>
+        <FinInstnId>
+          <ClrSysMmbId>
+            <ClrSysId>
+              <Cd>USABA</Cd>
+            </ClrSysId>
+            <MmbId>000000001</MmbId>
+          </ClrSysMmbId>
+        </FinInstnId>
+      </DbtrAgt>
+      <CdtrAgt>
+        <FinInstnId>
+          <BICFI>DEMODEFF</BICFI>
+        </FinInstnId>
+      </CdtrAgt>
+      <Cdtr>
+        <Nm>Berlin Bikes GmbH</Nm>
+      </Cdtr>
+    </CdtTrfTxInf>
+  </FIToFICstmrCdtTrf>
+</Document>

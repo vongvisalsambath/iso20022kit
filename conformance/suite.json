@@ -1,0 +1,592 @@
+{
+  "name": "Iso20022Kit conformance suite",
+  "version": "0.1.0",
+  "description": "Valid and deliberately broken ISO 20022 messages with the expected verdict. Any validator in any language can run it: see conformance/README.md.",
+  "categories": {
+    "valid": "A correct message. Expected: accepted.",
+    "schema": "Breaks the official XSD. Any schema-validating library should reject it.",
+    "business": "Matches the XSD but breaks a rule the schema can't express (totals, balances, ISO 4217 decimals, IBAN check digits).",
+    "wellformed": "Not well-formed XML.",
+    "unsupported": "Not a supported ISO 20022 message.",
+    "security": "Hostile XML (DTD entities). Must be refused, never expanded."
+  },
+  "cases": [
+    {
+      "id": "pacs008-valid-two-transactions",
+      "file": "cases/pacs008-valid-two-transactions.xml",
+      "message": "pacs.008.001.08",
+      "category": "valid",
+      "description": "Two USD payments with totals, IBAN and non-IBAN accounts.",
+      "expect": {
+        "valid": true,
+        "codes": []
+      }
+    },
+    {
+      "id": "pacs008-valid-minimal",
+      "file": "cases/pacs008-valid-minimal.xml",
+      "message": "pacs.008.001.08",
+      "category": "valid",
+      "description": "One EUR payment, clearing settlement, a debtor bank identified by US routing number.",
+      "expect": {
+        "valid": true,
+        "codes": []
+      }
+    },
+    {
+      "id": "camt053-valid-eur-iban",
+      "file": "cases/camt053-valid-eur-iban.xml",
+      "message": "camt.053.001.08",
+      "category": "valid",
+      "description": "EUR statement with balances, a transaction summary and three booked entries.",
+      "expect": {
+        "valid": true,
+        "codes": []
+      }
+    },
+    {
+      "id": "camt053-valid-usd-overdraft",
+      "file": "cases/camt053-valid-usd-overdraft.xml",
+      "message": "camt.053.001.08",
+      "category": "valid",
+      "description": "USD statement that opens overdrawn (DBIT) and closes in credit; one pending entry is left out of the balance.",
+      "expect": {
+        "valid": true,
+        "codes": []
+      }
+    },
+    {
+      "id": "pacs008-valid-no-xml-declaration",
+      "file": "cases/pacs008-valid-no-xml-declaration.xml",
+      "message": "pacs.008.001.08",
+      "category": "valid",
+      "description": "Same message without the <?xml?> declaration.",
+      "expect": {
+        "valid": true,
+        "codes": []
+      }
+    },
+    {
+      "id": "pacs008-valid-unknown-currency-warning",
+      "file": "cases/pacs008-valid-unknown-currency-warning.xml",
+      "message": "pacs.008.001.08",
+      "category": "valid",
+      "description": "A well-formed but non-ISO-4217 currency code: valid by schema, flagged as a warning.",
+      "expect": {
+        "valid": true,
+        "codes": [
+          "CURRENCY-UNKNOWN"
+        ]
+      }
+    },
+    {
+      "id": "pacs008-valid-in-envelope",
+      "file": "cases/pacs008-valid-in-envelope.xml",
+      "message": "pacs.008.001.08",
+      "category": "valid",
+      "description": "The Document inside a business envelope next to a Business Application Header (head.001).",
+      "expect": {
+        "valid": true,
+        "codes": []
+      }
+    },
+    {
+      "id": "pacs008-schema-missing-end-to-end-id",
+      "file": "cases/pacs008-schema-missing-end-to-end-id.xml",
+      "message": "pacs.008.001.08",
+      "category": "schema",
+      "description": "PmtId without its required EndToEndId.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "SCHEMA"
+        ]
+      }
+    },
+    {
+      "id": "pacs008-schema-bad-bic",
+      "file": "cases/pacs008-schema-bad-bic.xml",
+      "message": "pacs.008.001.08",
+      "category": "schema",
+      "description": "A BIC that isn't 8 or 11 characters.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "SCHEMA"
+        ]
+      }
+    },
+    {
+      "id": "pacs008-schema-negative-amount",
+      "file": "cases/pacs008-schema-negative-amount.xml",
+      "message": "pacs.008.001.08",
+      "category": "schema",
+      "description": "A negative settlement amount.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "SCHEMA"
+        ]
+      }
+    },
+    {
+      "id": "pacs008-schema-too-many-fraction-digits",
+      "file": "cases/pacs008-schema-too-many-fraction-digits.xml",
+      "message": "pacs.008.001.08",
+      "category": "schema",
+      "description": "An amount with 6 decimals (the schema allows at most 5).",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "SCHEMA"
+        ]
+      }
+    },
+    {
+      "id": "pacs008-schema-lowercase-currency",
+      "file": "cases/pacs008-schema-lowercase-currency.xml",
+      "message": "pacs.008.001.08",
+      "category": "schema",
+      "description": "Currency code in lower case.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "SCHEMA"
+        ]
+      }
+    },
+    {
+      "id": "pacs008-schema-missing-charge-bearer",
+      "file": "cases/pacs008-schema-missing-charge-bearer.xml",
+      "message": "pacs.008.001.08",
+      "category": "schema",
+      "description": "No ChrgBr.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "SCHEMA"
+        ]
+      }
+    },
+    {
+      "id": "pacs008-schema-bad-charge-bearer",
+      "file": "cases/pacs008-schema-bad-charge-bearer.xml",
+      "message": "pacs.008.001.08",
+      "category": "schema",
+      "description": "ChrgBr that isn't DEBT, CRED, SHAR or SLEV.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "SCHEMA"
+        ]
+      }
+    },
+    {
+      "id": "pacs008-schema-wrong-order",
+      "file": "cases/pacs008-schema-wrong-order.xml",
+      "message": "pacs.008.001.08",
+      "category": "schema",
+      "description": "Cdtr before CdtrAgt (the schema fixes the order).",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "SCHEMA"
+        ]
+      }
+    },
+    {
+      "id": "pacs008-schema-unknown-element",
+      "file": "cases/pacs008-schema-unknown-element.xml",
+      "message": "pacs.008.001.08",
+      "category": "schema",
+      "description": "An element the schema doesn't define.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "SCHEMA"
+        ]
+      }
+    },
+    {
+      "id": "pacs008-schema-message-id-too-long",
+      "file": "cases/pacs008-schema-message-id-too-long.xml",
+      "message": "pacs.008.001.08",
+      "category": "schema",
+      "description": "MsgId of 36 characters (max 35).",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "SCHEMA"
+        ]
+      }
+    },
+    {
+      "id": "pacs008-schema-empty-name",
+      "file": "cases/pacs008-schema-empty-name.xml",
+      "message": "pacs.008.001.08",
+      "category": "schema",
+      "description": "An empty debtor name (min length 1).",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "SCHEMA"
+        ]
+      }
+    },
+    {
+      "id": "pacs008-schema-bad-date",
+      "file": "cases/pacs008-schema-bad-date.xml",
+      "message": "pacs.008.001.08",
+      "category": "schema",
+      "description": "A settlement date that doesn't exist.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "SCHEMA"
+        ]
+      }
+    },
+    {
+      "id": "pacs008-schema-bad-uetr",
+      "file": "cases/pacs008-schema-bad-uetr.xml",
+      "message": "pacs.008.001.08",
+      "category": "schema",
+      "description": "A UETR that isn't a version 4 UUID.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "SCHEMA"
+        ]
+      }
+    },
+    {
+      "id": "pacs008-schema-bad-settlement-method",
+      "file": "cases/pacs008-schema-bad-settlement-method.xml",
+      "message": "pacs.008.001.08",
+      "category": "schema",
+      "description": "SttlmMtd that isn't INDA, INGA, COVE or CLRG.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "SCHEMA"
+        ]
+      }
+    },
+    {
+      "id": "pacs008-schema-iban-format",
+      "file": "cases/pacs008-schema-iban-format.xml",
+      "message": "pacs.008.001.08",
+      "category": "schema",
+      "description": "An IBAN that doesn't start with a country code and two digits.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "SCHEMA"
+        ]
+      }
+    },
+    {
+      "id": "pacs008-business-number-of-transactions",
+      "file": "cases/pacs008-business-number-of-transactions.xml",
+      "message": "pacs.008.001.08",
+      "category": "business",
+      "description": "NbOfTxs says 3 but there are 2 transactions.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "PACS008-NBOFTXS"
+        ]
+      }
+    },
+    {
+      "id": "pacs008-business-control-sum",
+      "file": "cases/pacs008-business-control-sum.xml",
+      "message": "pacs.008.001.08",
+      "category": "business",
+      "description": "CtrlSum doesn't match the transaction amounts.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "PACS008-CTRLSUM"
+        ]
+      }
+    },
+    {
+      "id": "pacs008-business-total-amount",
+      "file": "cases/pacs008-business-total-amount.xml",
+      "message": "pacs.008.001.08",
+      "category": "business",
+      "description": "TtlIntrBkSttlmAmt doesn't match the transaction amounts.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "PACS008-TOTAL"
+        ]
+      }
+    },
+    {
+      "id": "pacs008-business-total-currency",
+      "file": "cases/pacs008-business-total-currency.xml",
+      "message": "pacs.008.001.08",
+      "category": "business",
+      "description": "One transaction in another currency than the total.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "PACS008-TOTAL"
+        ]
+      }
+    },
+    {
+      "id": "pacs008-business-usd-three-decimals",
+      "file": "cases/pacs008-business-usd-three-decimals.xml",
+      "message": "pacs.008.001.08",
+      "category": "business",
+      "description": "500.255 USD: USD has 2 decimals.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "AMOUNT-DECIMALS",
+          "PACS008-CTRLSUM",
+          "PACS008-TOTAL"
+        ]
+      }
+    },
+    {
+      "id": "pacs008-business-jpy-decimals",
+      "file": "cases/pacs008-business-jpy-decimals.xml",
+      "message": "pacs.008.001.08",
+      "category": "business",
+      "description": "250.50 JPY: the yen has no decimals.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "AMOUNT-DECIMALS"
+        ]
+      }
+    },
+    {
+      "id": "pacs008-business-iban-check-digits",
+      "file": "cases/pacs008-business-iban-check-digits.xml",
+      "message": "pacs.008.001.08",
+      "category": "business",
+      "description": "An IBAN with wrong check digits (well-formed, so the schema accepts it).",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "IBAN-CHECKSUM"
+        ]
+      }
+    },
+    {
+      "id": "camt053-schema-missing-bank-transaction-code",
+      "file": "cases/camt053-schema-missing-bank-transaction-code.xml",
+      "message": "camt.053.001.08",
+      "category": "schema",
+      "description": "An entry without BkTxCd (required).",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "SCHEMA"
+        ]
+      }
+    },
+    {
+      "id": "camt053-schema-bad-credit-debit",
+      "file": "cases/camt053-schema-bad-credit-debit.xml",
+      "message": "camt.053.001.08",
+      "category": "schema",
+      "description": "CdtDbtInd that isn't CRDT or DBIT.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "SCHEMA"
+        ]
+      }
+    },
+    {
+      "id": "camt053-schema-missing-balance",
+      "file": "cases/camt053-schema-missing-balance.xml",
+      "message": "camt.053.001.08",
+      "category": "schema",
+      "description": "A statement with no Bal at all (at least one is required).",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "SCHEMA"
+        ]
+      }
+    },
+    {
+      "id": "camt053-business-closing-balance",
+      "file": "cases/camt053-business-closing-balance.xml",
+      "message": "camt.053.001.08",
+      "category": "business",
+      "description": "Closing balance 10.00 more than opening + credits − debits.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "CAMT053-BALANCE"
+        ]
+      }
+    },
+    {
+      "id": "camt053-business-overdraft-sign",
+      "file": "cases/camt053-business-overdraft-sign.xml",
+      "message": "camt.053.001.08",
+      "category": "business",
+      "description": "Opening balance marked CRDT instead of DBIT: the statement no longer adds up.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "CAMT053-BALANCE"
+        ]
+      }
+    },
+    {
+      "id": "camt053-business-summary-count",
+      "file": "cases/camt053-business-summary-count.xml",
+      "message": "camt.053.001.08",
+      "category": "business",
+      "description": "TtlNtries/NbOfNtries says 4 but there are 3 entries.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "CAMT053-SUMMARY"
+        ]
+      }
+    },
+    {
+      "id": "camt053-business-summary-debit-sum",
+      "file": "cases/camt053-business-summary-debit-sum.xml",
+      "message": "camt.053.001.08",
+      "category": "business",
+      "description": "TtlDbtNtries/Sum doesn't match the debit entries.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "CAMT053-SUMMARY"
+        ]
+      }
+    },
+    {
+      "id": "camt053-business-summary-net",
+      "file": "cases/camt053-business-summary-net.xml",
+      "message": "camt.053.001.08",
+      "category": "business",
+      "description": "TtlNetNtry has the wrong direction.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "CAMT053-SUMMARY"
+        ]
+      }
+    },
+    {
+      "id": "camt053-business-eur-three-decimals",
+      "file": "cases/camt053-business-eur-three-decimals.xml",
+      "message": "camt.053.001.08",
+      "category": "business",
+      "description": "49.505 EUR: the euro has 2 decimals.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "AMOUNT-DECIMALS",
+          "CAMT053-BALANCE",
+          "CAMT053-SUMMARY"
+        ]
+      }
+    },
+    {
+      "id": "camt053-business-iban-check-digits",
+      "file": "cases/camt053-business-iban-check-digits.xml",
+      "message": "camt.053.001.08",
+      "category": "business",
+      "description": "The statement account's IBAN has wrong check digits.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "IBAN-CHECKSUM"
+        ]
+      }
+    },
+    {
+      "id": "wellformed-unclosed-tag",
+      "file": "cases/wellformed-unclosed-tag.xml",
+      "message": "pacs.008.001.08",
+      "category": "wellformed",
+      "description": "An element that is never closed.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "XML-MALFORMED"
+        ]
+      }
+    },
+    {
+      "id": "wellformed-not-xml",
+      "file": "cases/wellformed-not-xml.xml",
+      "message": null,
+      "category": "wellformed",
+      "description": "Not XML at all.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "XML-MALFORMED"
+        ]
+      }
+    },
+    {
+      "id": "unsupported-other-version",
+      "file": "cases/unsupported-other-version.xml",
+      "message": "pacs.008.001.08",
+      "category": "unsupported",
+      "description": "pacs.008.001.99, a version that doesn't exist (namespace recognised, version not supported).",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "MSG-UNSUPPORTED"
+        ]
+      }
+    },
+    {
+      "id": "unsupported-not-iso",
+      "file": "cases/unsupported-not-iso.xml",
+      "message": null,
+      "category": "unsupported",
+      "description": "Well-formed XML that isn't an ISO 20022 message.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "MSG-NO-DOCUMENT"
+        ]
+      }
+    },
+    {
+      "id": "security-xxe-entity",
+      "file": "cases/security-xxe-entity.xml",
+      "message": "pacs.008.001.08",
+      "category": "security",
+      "description": "An external entity (XXE) trying to read a local file into the debtor name. Must be refused, not expanded.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "XML-DTD"
+        ]
+      }
+    },
+    {
+      "id": "security-billion-laughs",
+      "file": "cases/security-billion-laughs.xml",
+      "message": "pacs.008.001.08",
+      "category": "security",
+      "description": "Nested entities that expand to gigabytes (\"billion laughs\"). Must be refused quickly.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "XML-DTD"
+        ]
+      }
+    }
+  ]
+}

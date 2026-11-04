@@ -1,0 +1,8 @@
+bin/
+obj/
+*.user
+.vs/
+node_modules/
+coverage/
+artifacts/
+*.nupkg
