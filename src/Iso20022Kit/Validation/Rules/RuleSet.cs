@@ -198,10 +198,12 @@ internal sealed class Camt053SummaryRule : IRule
                 var declared = Camt053.Signed(c, net);
                 var actual = credits.Sum(Amount) - debits.Sum(Amount);
                 if (declared is not null && declared.Value != actual)
-                    c.Error(Code, $"TtlNetNtry is {(declared < 0 ? "a debit of " : "a credit of ")}{RuleContext.Amount(Math.Abs(declared.Value))}, but credits − debits = {RuleContext.Amount(actual)}.", net);
+                    c.Error(Code, $"TtlNetNtry is {Side(declared.Value)}, but the entries net to {Side(actual)} (credits − debits = {RuleContext.Amount(actual)}).", net);
             }
         }
     }
+
+    private static string Side(decimal v) => $"{(v < 0 ? "a debit" : "a credit")} of {RuleContext.Amount(Math.Abs(v))}";
 
     private void CheckGroup(RuleContext c, XElement? group, string label, int count, decimal sum)
     {

@@ -52,7 +52,7 @@ internal static partial class Validator
             var (line, col) = XmlInput.Position(document);
             var supported = string.Join(", ", Catalog.Supported);
             var sameFamily = Catalog.Supported.Where(s => s.Family == id.Family).ToList();
-            var hint = sameFamily.Count > 0 ? $" This library supports {string.Join(", ", sameFamily)} of {id.Family}." : "";
+            var hint = sameFamily.Count > 0 ? $" For {id.Family}, only {string.Join(" and ", sameFamily)} {(sameFamily.Count == 1 ? "is" : "are")} supported." : "";
             issues.Add(new Issue(Severity.Error, "MSG-UNSUPPORTED", $"{id} is not supported yet. Supported messages: {supported}.{hint}", "/Document", line, col));
         }
 

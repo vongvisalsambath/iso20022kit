@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ISO 20022 Viewer</title>
+  <meta name="description" content="Read and check ISO 20022 payment messages (pacs.008, camt.053) in your browser: plain-English summary, field names spelled out, schema and business-rule errors with line numbers. Nothing is uploaded.">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand">
+      <img src="favicon.svg" alt="" width="24" height="24">
+      <h1>ISO 20022 Viewer</h1>
+    </div>
+    <p class="tagline">Read and check payment messages. Runs in your browser; nothing is uploaded.</p>
+    <nav>
+      <a href="https://github.com/vongvisalsambath/iso20022kit">GitHub</a>
+      <a href="https://github.com/vongvisalsambath/iso20022kit/blob/main/docs/rules.md">Rules</a>
+      <a href="https://github.com/vongvisalsambath/iso20022kit/tree/main/conformance">Conformance suite</a>
+    </nav>
+  </header>
+
+  <main class="split">
+    <section class="pane input-pane" aria-label="Message">
+      <div class="toolbar">
+        <label class="select">
+          <span class="sr-only">Sample message</span>
+          <select id="sample"><option value="">Samples…</option></select>
+        </label>
+        <label class="button">
+          Open file<input id="file" type="file" accept=".xml,.txt,application/xml,text/xml" hidden>
+        </label>
+        <button id="clear" type="button" class="ghost">Clear</button>
+        <span id="big-note" class="big-note" hidden></span>
+      </div>
+      <div class="editor">
+        <div class="gutter-wrap" aria-hidden="true"><div id="gutter" class="gutter"></div></div>
+        <div class="code">
+          <div class="marks-wrap" aria-hidden="true"><div id="marks" class="marks"></div></div>
+          <div id="source" class="source" hidden tabindex="0" aria-label="Message source (read-only)">
+            <div id="source-spacer" class="source-spacer"></div>
+            <div id="source-rows" class="source-rows"></div>
+          </div>
+          <textarea id="xml" spellcheck="false" autocomplete="off" autocapitalize="off" wrap="off"
+            aria-label="ISO 20022 message XML" placeholder="Paste a pacs.008 or camt.053 message here, or drop a file anywhere on the page."></textarea>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane output-pane" aria-label="Result">
+      <div id="status" class="status" role="status" aria-live="polite"></div>
+      <div id="output"></div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <span>Schema: official ISO 20022 XSDs. Rules: ISO 4217 decimals, IBAN check digits, pacs.008 totals, camt.053 balances.</span>
+    <span>Part of <a href="https://github.com/vongvisalsambath/iso20022kit">Iso20022Kit</a> · Apache-2.0 · sample data is made up</span>
+  </footer>
+
+  <div id="drop" class="drop" hidden><div>Drop the message to read it</div></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
