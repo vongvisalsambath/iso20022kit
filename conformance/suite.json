@@ -64,7 +64,8 @@
       "expect": {
         "valid": true,
         "codes": []
-      }
+      },
+      "base": "pacs008-valid-two-transactions"
     },
     {
       "id": "pacs008-valid-unknown-currency-warning",
@@ -77,7 +78,8 @@
         "codes": [
           "CURRENCY-UNKNOWN"
         ]
-      }
+      },
+      "base": "pacs008-valid-minimal"
     },
     {
       "id": "pacs008-valid-in-envelope",
@@ -88,7 +90,8 @@
       "expect": {
         "valid": true,
         "codes": []
-      }
+      },
+      "base": "pacs008-valid-minimal"
     },
     {
       "id": "pacs008-schema-missing-end-to-end-id",
@@ -101,7 +104,8 @@
         "codes": [
           "SCHEMA"
         ]
-      }
+      },
+      "base": "pacs008-valid-minimal"
     },
     {
       "id": "pacs008-schema-bad-bic",
@@ -114,7 +118,8 @@
         "codes": [
           "SCHEMA"
         ]
-      }
+      },
+      "base": "pacs008-valid-two-transactions"
     },
     {
       "id": "pacs008-schema-negative-amount",
@@ -127,7 +132,8 @@
         "codes": [
           "SCHEMA"
         ]
-      }
+      },
+      "base": "pacs008-valid-minimal"
     },
     {
       "id": "pacs008-schema-too-many-fraction-digits",
@@ -140,7 +146,8 @@
         "codes": [
           "SCHEMA"
         ]
-      }
+      },
+      "base": "pacs008-valid-minimal"
     },
     {
       "id": "pacs008-schema-lowercase-currency",
@@ -153,7 +160,8 @@
         "codes": [
           "SCHEMA"
         ]
-      }
+      },
+      "base": "pacs008-valid-minimal"
     },
     {
       "id": "pacs008-schema-missing-charge-bearer",
@@ -166,7 +174,8 @@
         "codes": [
           "SCHEMA"
         ]
-      }
+      },
+      "base": "pacs008-valid-minimal"
     },
     {
       "id": "pacs008-schema-bad-charge-bearer",
@@ -179,7 +188,8 @@
         "codes": [
           "SCHEMA"
         ]
-      }
+      },
+      "base": "pacs008-valid-minimal"
     },
     {
       "id": "pacs008-schema-wrong-order",
@@ -192,7 +202,8 @@
         "codes": [
           "SCHEMA"
         ]
-      }
+      },
+      "base": "pacs008-valid-minimal"
     },
     {
       "id": "pacs008-schema-unknown-element",
@@ -205,7 +216,8 @@
         "codes": [
           "SCHEMA"
         ]
-      }
+      },
+      "base": "pacs008-valid-minimal"
     },
     {
       "id": "pacs008-schema-message-id-too-long",
@@ -218,7 +230,8 @@
         "codes": [
           "SCHEMA"
         ]
-      }
+      },
+      "base": "pacs008-valid-minimal"
     },
     {
       "id": "pacs008-schema-empty-name",
@@ -231,7 +244,8 @@
         "codes": [
           "SCHEMA"
         ]
-      }
+      },
+      "base": "pacs008-valid-minimal"
     },
     {
       "id": "pacs008-schema-bad-date",
@@ -244,7 +258,8 @@
         "codes": [
           "SCHEMA"
         ]
-      }
+      },
+      "base": "pacs008-valid-minimal"
     },
     {
       "id": "pacs008-schema-bad-uetr",
@@ -257,7 +272,8 @@
         "codes": [
           "SCHEMA"
         ]
-      }
+      },
+      "base": "pacs008-valid-two-transactions"
     },
     {
       "id": "pacs008-schema-bad-settlement-method",
@@ -270,7 +286,8 @@
         "codes": [
           "SCHEMA"
         ]
-      }
+      },
+      "base": "pacs008-valid-two-transactions"
     },
     {
       "id": "pacs008-schema-iban-format",
@@ -283,7 +300,8 @@
         "codes": [
           "SCHEMA"
         ]
-      }
+      },
+      "base": "pacs008-valid-two-transactions"
     },
     {
       "id": "pacs008-business-number-of-transactions",
@@ -296,7 +314,8 @@
         "codes": [
           "PACS008-NBOFTXS"
         ]
-      }
+      },
+      "base": "pacs008-valid-two-transactions"
     },
     {
       "id": "pacs008-business-control-sum",
@@ -309,7 +328,8 @@
         "codes": [
           "PACS008-CTRLSUM"
         ]
-      }
+      },
+      "base": "pacs008-valid-two-transactions"
     },
     {
       "id": "pacs008-business-total-amount",
@@ -322,7 +342,8 @@
         "codes": [
           "PACS008-TOTAL"
         ]
-      }
+      },
+      "base": "pacs008-valid-two-transactions"
     },
     {
       "id": "pacs008-business-total-currency",
@@ -335,7 +356,8 @@
         "codes": [
           "PACS008-TOTAL"
         ]
-      }
+      },
+      "base": "pacs008-valid-two-transactions"
     },
     {
       "id": "pacs008-business-usd-three-decimals",
@@ -350,7 +372,8 @@
           "PACS008-CTRLSUM",
           "PACS008-TOTAL"
         ]
-      }
+      },
+      "base": "pacs008-valid-two-transactions"
     },
     {
       "id": "pacs008-business-jpy-decimals",
@@ -363,7 +386,8 @@
         "codes": [
           "AMOUNT-DECIMALS"
         ]
-      }
+      },
+      "base": "pacs008-valid-minimal"
     },
     {
       "id": "pacs008-business-iban-check-digits",
@@ -376,7 +400,8 @@
         "codes": [
           "IBAN-CHECKSUM"
         ]
-      }
+      },
+      "base": "pacs008-valid-two-transactions"
     },
     {
       "id": "camt053-schema-missing-bank-transaction-code",
@@ -389,7 +414,8 @@
         "codes": [
           "SCHEMA"
         ]
-      }
+      },
+      "base": "camt053-valid-usd-overdraft"
     },
     {
       "id": "camt053-schema-bad-credit-debit",
@@ -402,7 +428,8 @@
         "codes": [
           "SCHEMA"
         ]
-      }
+      },
+      "base": "camt053-valid-eur-iban"
     },
     {
       "id": "camt053-schema-missing-balance",
@@ -415,7 +442,8 @@
         "codes": [
           "SCHEMA"
         ]
-      }
+      },
+      "base": "camt053-valid-usd-overdraft"
     },
     {
       "id": "camt053-business-closing-balance",
@@ -428,7 +456,8 @@
         "codes": [
           "CAMT053-BALANCE"
         ]
-      }
+      },
+      "base": "camt053-valid-eur-iban"
     },
     {
       "id": "camt053-business-overdraft-sign",
@@ -441,7 +470,8 @@
         "codes": [
           "CAMT053-BALANCE"
         ]
-      }
+      },
+      "base": "camt053-valid-usd-overdraft"
     },
     {
       "id": "camt053-business-summary-count",
@@ -454,7 +484,8 @@
         "codes": [
           "CAMT053-SUMMARY"
         ]
-      }
+      },
+      "base": "camt053-valid-eur-iban"
     },
     {
       "id": "camt053-business-summary-debit-sum",
@@ -467,7 +498,8 @@
         "codes": [
           "CAMT053-SUMMARY"
         ]
-      }
+      },
+      "base": "camt053-valid-eur-iban"
     },
     {
       "id": "camt053-business-summary-net",
@@ -480,7 +512,8 @@
         "codes": [
           "CAMT053-SUMMARY"
         ]
-      }
+      },
+      "base": "camt053-valid-eur-iban"
     },
     {
       "id": "camt053-business-eur-three-decimals",
@@ -495,7 +528,8 @@
           "CAMT053-BALANCE",
           "CAMT053-SUMMARY"
         ]
-      }
+      },
+      "base": "camt053-valid-eur-iban"
     },
     {
       "id": "camt053-business-iban-check-digits",
@@ -508,7 +542,8 @@
         "codes": [
           "IBAN-CHECKSUM"
         ]
-      }
+      },
+      "base": "camt053-valid-eur-iban"
     },
     {
       "id": "wellformed-unclosed-tag",
@@ -521,7 +556,8 @@
         "codes": [
           "XML-MALFORMED"
         ]
-      }
+      },
+      "base": "pacs008-valid-minimal"
     },
     {
       "id": "wellformed-not-xml",
@@ -547,7 +583,8 @@
         "codes": [
           "MSG-UNSUPPORTED"
         ]
-      }
+      },
+      "base": "pacs008-valid-minimal"
     },
     {
       "id": "unsupported-not-iso",
@@ -573,7 +610,8 @@
         "codes": [
           "XML-DTD"
         ]
-      }
+      },
+      "base": "pacs008-valid-minimal"
     },
     {
       "id": "security-billion-laughs",
@@ -586,7 +624,8 @@
         "codes": [
           "XML-DTD"
         ]
-      }
+      },
+      "base": "pacs008-valid-minimal"
     }
   ]
 }

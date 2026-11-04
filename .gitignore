@@ -6,3 +6,5 @@ node_modules/
 coverage/
 artifacts/
 *.nupkg
+conformance/runners/rust-mx20022/target/
+conformance/runners/java-prowide/target/

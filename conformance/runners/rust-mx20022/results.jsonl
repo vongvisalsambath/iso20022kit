@@ -1,0 +1,45 @@
+{"detail":"","id":"pacs008-valid-two-transactions","result":"valid"}
+{"detail":"","id":"pacs008-valid-minimal","result":"valid"}
+{"detail":"no generated type for camt.053.001.08 in mx20022 0.3.0","id":"camt053-valid-eur-iban","result":"unsupported"}
+{"detail":"no generated type for camt.053.001.08 in mx20022 0.3.0","id":"camt053-valid-usd-overdraft","result":"unsupported"}
+{"detail":"","id":"pacs008-valid-no-xml-declaration","result":"valid"}
+{"detail":"","id":"pacs008-valid-unknown-currency-warning","result":"valid"}
+{"detail":"no generated type for head.001.001.02 in mx20022 0.3.0","id":"pacs008-valid-in-envelope","result":"unsupported"}
+{"detail":"parse: XML deserialization error in pacs.008.001.08: missing field `EndToEndId`","id":"pacs008-schema-missing-end-to-end-id","result":"invalid"}
+{"detail":"/Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/CdtrAgt/FinInstnId/BICFI value does not match pattern [A-Z0-9]{4,4}[A-Z]{2,2}[A-Z0-9]{2,2}([A-Z0-9]{3,3}){0,1}","id":"pacs008-schema-bad-bic","result":"invalid"}
+{"detail":"","id":"pacs008-schema-negative-amount","result":"valid"}
+{"detail":"/Document/FIToFICstmrCdtTrf/CdtTrfTxInf[0]/IntrBkSttlmAmt value exceeds maximum fraction digits 5 (got 6)","id":"pacs008-schema-too-many-fraction-digits","result":"invalid"}
+{"detail":"/Document/FIToFICstmrCdtTrf/CdtTrfTxInf[0]/IntrBkSttlmAmt/@Ccy value does not match pattern [A-Z]{3,3}","id":"pacs008-schema-lowercase-currency","result":"invalid"}
+{"detail":"parse: XML deserialization error in pacs.008.001.08: missing field `ChrgBr`","id":"pacs008-schema-missing-charge-bearer","result":"invalid"}
+{"detail":"parse: XML deserialization error in pacs.008.001.08: unknown variant `OURS`, expected one of `DEBT`, `CRED`, `SHAR`, `SLEV`","id":"pacs008-schema-bad-charge-bearer","result":"invalid"}
+{"detail":"","id":"pacs008-schema-wrong-order","result":"valid"}
+{"detail":"","id":"pacs008-schema-unknown-element","result":"valid"}
+{"detail":"/Document/FIToFICstmrCdtTrf/GrpHdr/MsgId value exceeds maximum length 35 (got 36)","id":"pacs008-schema-message-id-too-long","result":"invalid"}
+{"detail":"/Document/FIToFICstmrCdtTrf/CdtTrfTxInf[0]/Dbtr/Nm value is shorter than minimum length 1 (got 0)","id":"pacs008-schema-empty-name","result":"invalid"}
+{"detail":"","id":"pacs008-schema-bad-date","result":"valid"}
+{"detail":"/Document/FIToFICstmrCdtTrf/CdtTrfTxInf[0]/PmtId/UETR value does not match pattern [a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}","id":"pacs008-schema-bad-uetr","result":"invalid"}
+{"detail":"parse: XML deserialization error in pacs.008.001.08: unknown variant `WIRE`, expected one of `INDA`, `INGA`, `COVE`, `CLRG`","id":"pacs008-schema-bad-settlement-method","result":"invalid"}
+{"detail":"/Document/FIToFICstmrCdtTrf/CdtTrfTxInf[1]/CdtrAcct/Id/IBAN value does not match pattern [A-Z]{2,2}[0-9]{2,2}[a-zA-Z0-9]{1,30}","id":"pacs008-schema-iban-format","result":"invalid"}
+{"detail":"","id":"pacs008-business-number-of-transactions","result":"valid"}
+{"detail":"","id":"pacs008-business-control-sum","result":"valid"}
+{"detail":"","id":"pacs008-business-total-amount","result":"valid"}
+{"detail":"","id":"pacs008-business-total-currency","result":"valid"}
+{"detail":"","id":"pacs008-business-usd-three-decimals","result":"valid"}
+{"detail":"","id":"pacs008-business-jpy-decimals","result":"valid"}
+{"detail":"","id":"pacs008-business-iban-check-digits","result":"valid"}
+{"detail":"no generated type for camt.053.001.08 in mx20022 0.3.0","id":"camt053-schema-missing-bank-transaction-code","result":"unsupported"}
+{"detail":"no generated type for camt.053.001.08 in mx20022 0.3.0","id":"camt053-schema-bad-credit-debit","result":"unsupported"}
+{"detail":"no generated type for camt.053.001.08 in mx20022 0.3.0","id":"camt053-schema-missing-balance","result":"unsupported"}
+{"detail":"no generated type for camt.053.001.08 in mx20022 0.3.0","id":"camt053-business-closing-balance","result":"unsupported"}
+{"detail":"no generated type for camt.053.001.08 in mx20022 0.3.0","id":"camt053-business-overdraft-sign","result":"unsupported"}
+{"detail":"no generated type for camt.053.001.08 in mx20022 0.3.0","id":"camt053-business-summary-count","result":"unsupported"}
+{"detail":"no generated type for camt.053.001.08 in mx20022 0.3.0","id":"camt053-business-summary-debit-sum","result":"unsupported"}
+{"detail":"no generated type for camt.053.001.08 in mx20022 0.3.0","id":"camt053-business-summary-net","result":"unsupported"}
+{"detail":"no generated type for camt.053.001.08 in mx20022 0.3.0","id":"camt053-business-eur-three-decimals","result":"unsupported"}
+{"detail":"no generated type for camt.053.001.08 in mx20022 0.3.0","id":"camt053-business-iban-check-digits","result":"unsupported"}
+{"detail":"parse: XML deserialization error in pacs.008.001.08: ill-formed document: expected `</Cdtr>`, but `</CdtTrfTxInf>` was found","id":"wellformed-unclosed-tag","result":"invalid"}
+{"detail":"detect: invalid envelope: no ISO 20022 namespace found in XML document","id":"wellformed-not-xml","result":"invalid"}
+{"detail":"no generated type for pacs.008.001.99 in mx20022 0.3.0","id":"unsupported-other-version","result":"unsupported"}
+{"detail":"detect: invalid envelope: no ISO 20022 namespace found in XML document","id":"unsupported-not-iso","result":"invalid"}
+{"detail":"parse: XML deserialization error in pacs.008.001.08: at 0..3: unrecognized entity `xxe`","id":"security-xxe-entity","result":"invalid"}
+{"detail":"parse: XML deserialization error in pacs.008.001.08: at 0..1: unrecognized entity `h`","id":"security-billion-laughs","result":"invalid"}

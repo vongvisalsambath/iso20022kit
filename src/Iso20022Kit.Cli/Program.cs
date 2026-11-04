@@ -17,6 +17,23 @@ switch (rest[0])
     case "rules":
         foreach (var (code, text) in Iso20022.RuleDescriptions) Console.WriteLine($"{code,-18} {text}");
         return 0;
+    case "conformance" when rest.Length > 1:
+    {
+        // one JSON line per case, the same format as the runners for other libraries (conformance/runners)
+        var suitePath = rest[1];
+        using var suite = JsonDocument.Parse(File.ReadAllText(suitePath));
+        var dir = Path.GetDirectoryName(Path.GetFullPath(suitePath))!;
+        var line = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+        foreach (var c in suite.RootElement.GetProperty("cases").EnumerateArray())
+        {
+            var report = Iso20022.Validate(File.ReadAllText(Path.Combine(dir, c.GetProperty("file").GetString()!)));
+            var unsupported = report.Issues.Any(i => i.Code is "MSG-UNSUPPORTED");
+            var result = unsupported ? "unsupported" : report.IsValid ? "valid" : "invalid";
+            var detail = string.Join("; ", report.Issues.Select(i => i.Code).Distinct());
+            Console.WriteLine(JsonSerializer.Serialize(new { id = c.GetProperty("id").GetString(), result, detail }, line));
+        }
+        return 0;
+    }
     case "validate" when rest.Length > 1:
     {
         var allValid = true;
@@ -63,6 +80,7 @@ static int Usage()
         iso20022 validate <file>... [--json]   check messages against the official schema and business rules
         iso20022 read <file> [--json]          show what a pacs.008 or camt.053 says
         iso20022 rules                         list every validation code
+        iso20022 conformance <suite.json>      run the conformance suite (one JSON line per case)
         Exit codes: 0 valid, 1 invalid, 2 usage or file error.
         """);
     return 2;

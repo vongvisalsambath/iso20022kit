@@ -17,6 +17,13 @@ P_MIN = "pacs008-minimal.xml"
 C_EUR = "camt053-eur-iban.xml"
 C_USD = "camt053-usd-overdraft.xml"
 
+BASE_CASE = {
+    P_TWO: "pacs008-valid-two-transactions",
+    P_MIN: "pacs008-valid-minimal",
+    C_EUR: "camt053-valid-eur-iban",
+    C_USD: "camt053-valid-usd-overdraft",
+}
+
 PACS = "pacs.008.001.08"
 CAMT = "camt.053.001.08"
 
@@ -190,14 +197,18 @@ def main():
                 text = text.replace(old, new, count)
         file = f"cases/{case_id}.xml"
         (HERE / file).write_text(text, encoding="utf-8")
-        suite.append({
+        entry = {
             "id": case_id,
             "file": file,
             "message": message,
             "category": category,
             "description": description,
             "expect": {"valid": valid, "codes": codes},
-        })
+        }
+        if base is not None and not (category == "valid" and not changes):
+            # the valid case this one was made from: a rejection only says something if that one is accepted
+            entry["base"] = BASE_CASE[base]
+        suite.append(entry)
     manifest = {
         "name": "Iso20022Kit conformance suite",
         "version": "0.1.0",

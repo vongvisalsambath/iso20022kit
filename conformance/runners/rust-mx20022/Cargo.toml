@@ -1,0 +1,9 @@
+[package]
+name = "conformance-mx20022"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+mx20022 = "=0.3.0"
+serde_json = "1"
