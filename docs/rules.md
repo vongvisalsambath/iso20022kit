@@ -10,16 +10,17 @@ A check happens in three stages, and each stage runs only if the one before it f
 
 Business rules wait for the schema to pass because they depend on the message's structure: with a required element missing, a total can't be checked meaningfully. In .NET, `new ValidationOptions { AlwaysRunRules = true }` runs them anyway.
 
-Errors make a message invalid. Warnings (only `CURRENCY-UNKNOWN` today) don't.
+Errors make a message invalid. Warnings (`CURRENCY-UNKNOWN`, `HIDDEN-CHARACTERS` and `TOO-MANY-ISSUES`) don't.
 
 ## Reading
 
 | Code | Meaning |
 |---|---|
-| `XML-MALFORMED` | Not well-formed XML: an unclosed tag, a stray `&`, text outside the root element… The message names the problem and its position. |
+| `XML-MALFORMED` | Not well-formed XML: an unclosed tag, a stray `&`, text outside the root element, a character XML doesn't allow, bytes that aren't valid in the file's encoding, or input beyond the limits below. The message names the problem and its position. |
 | `XML-DTD` | The input has a DTD (`<!DOCTYPE …>`). DTDs are never used in ISO 20022 messages and are how XML attacks work (reading local files through external entities, "billion laughs" memory exhaustion), so the input is refused without being read. The .NET reader doesn't report a position for this one; the browser viewer does. |
+| `MSG-MULTIPLE-DOCUMENTS` | The input holds more than one ISO 20022 `Document` (for example two inside one envelope). Only one is checked at a time: checking the first and calling the input valid would let the second say anything, and a system downstream might read that one. |
 | `MSG-NO-DOCUMENT` | The XML has no ISO 20022 `Document` element, i.e. no `<Document xmlns="urn:iso:std:iso:20022:tech:xsd:…">`, either as the root or inside an envelope. |
-| `MSG-UNKNOWN` | There is a `Document`, but its namespace isn't a recognisable message identifier such as `pacs.008.001.08`. |
+| `MSG-UNKNOWN` | There is a `Document`, but its namespace isn't exactly a message identifier such as `urn:iso:std:iso:20022:tech:xsd:pacs.008.001.08` (a trailing space or other characters make it a different namespace, which no schema covers). |
 | `MSG-UNSUPPORTED` | A real ISO 20022 message that this version doesn't support. Supported today: `pacs.008.001.08` and `camt.053.001.08`. |
 
 A message inside a business envelope (for example next to an `AppHdr`) is found and checked; line numbers refer to the whole input.
@@ -43,11 +44,27 @@ The XSDs in [`schemas/`](../schemas) are the official ISO 20022 schemas; see [NO
 | `PACS008-CTRLSUM` | pacs.008 | `GrpHdr/CtrlSum`, when present, must equal the sum of every `IntrBkSttlmAmt`. As in ISO 20022, the control sum ignores currencies. |
 | `PACS008-TOTAL` | pacs.008 | `GrpHdr/TtlIntrBkSttlmAmt`, when present, must equal the sum of every `IntrBkSttlmAmt`, and every transaction must settle in its currency. |
 | `CAMT053-BALANCE` | camt.053 | For each statement: opening booked balance (`OPBD`, or `PRCD` previous closing) + booked credits − booked debits = closing booked balance (`CLBD`). Only entries with status `BOOK` count. Debit balances (`CdtDbtInd` = `DBIT`, an overdrawn account) are negative. Skipped when the balances and entries aren't all in one currency. |
+| `HIDDEN-CHARACTERS` | all | **Warning.** A value contains an invisible or direction-changing character: a right-to-left override (U+202E), a zero-width space, a C1 control… `Acme\u202E0001` displays as `Acme1000`, so a person reviewing the payment could approve something other than what is paid. The schema allows these characters in free text, so this is a warning; the message names the character. |
 | `CAMT053-SUMMARY` | camt.053 | For each statement with a `TxsSummry`: the numbers of entries and their sums in `TtlNtries`, `TtlCdtNtries` and `TtlDbtNtries` must match the entries listed, and `TtlNetNtry` must equal credits − debits, with the right direction. |
 
 All sums are exact decimal arithmetic: no rounding, and `1500.25` and `1500.250` are equal.
 
 Any business rule can be switched off: `new ValidationOptions { DisabledRules = { "CURRENCY-UNKNOWN" } }` in .NET, or the checkboxes under "Checks" in the viewer. `SCHEMA` can't be switched off.
+
+## Limits
+
+Every input is bounded, so a hostile or broken file can't make the validator run out of time or memory:
+
+| Limit | Value | What happens |
+|---|---|---|
+| Size | 50 million characters (`XmlInput.MaxCharacters`) | `XML-MALFORMED`. The `iso20022` command refuses files over 200 MB before reading them; the viewer refuses files over 50 MB. |
+| Nesting | 256 levels | `XML-MALFORMED`. ISO 20022 messages are about 20 levels deep. Without the limit, .NET's tree builder takes minutes on a 1 MB file of nested tags. |
+| Issues | 1000 (`ValidationOptions.MaxIssues`) | Checking stops and a `TOO-MANY-ISSUES` warning is added. The message is already invalid. |
+| Quoted text | 600 characters per message | Long values are shortened in the middle, and invisible characters in messages and paths are shown as `\u202E`-style escapes. |
+
+DTDs and entities other than the five predefined ones (`&lt;` `&gt;` `&amp;` `&apos;` `&quot;`) are refused, so external-entity (XXE) and entity-expansion attacks can't happen. `xsi:schemaLocation` is ignored: no schema, URL or file named in a message is ever fetched.
+
+When reading a file, pass a `Stream` (or use the `iso20022` command) rather than a string you decoded yourself: the stream overloads decode by the byte-order mark or the XML declaration and reject invalid bytes, where decoding to a string first may have replaced them silently.
 
 ## Positions
 

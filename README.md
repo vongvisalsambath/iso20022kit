@@ -37,7 +37,7 @@ if (!report.IsValid)
         Console.WriteLine($"{e.Code} line {e.Line}: {e.Message}");   // e.Path has the element's path
 ```
 
-`Validate` takes a string or a stream. It detects the message type from the namespace (also inside a business envelope with an `AppHdr`), refuses DTDs and external entities, and never throws for bad input: everything is in the report. The codes are listed in [docs/rules.md](docs/rules.md).
+`Validate` takes a string or a stream; for files, pass the stream, so the bytes are decoded by their declared encoding and invalid ones are reported rather than replaced. It detects the message type from the namespace (also inside a business envelope with an `AppHdr`), refuses DTDs and external entities, and never throws for bad input: everything is in the report. The codes are listed in [docs/rules.md](docs/rules.md).
 
 ### Read
 
@@ -88,14 +88,19 @@ dotnet run --project src/Iso20022Kit.Cli -- rules
 ```
 cd viewer
 npm ci
-npm run dev      # http://localhost:8000
-npm test         # the conformance suite through the browser validator
+npm run dev      # http://127.0.0.1:8000
+npm test         # the conformance suite and the hostile inputs through the browser validator
+npm run test:e2e # the built page in Chromium, with the production headers
 npm run build    # static site in viewer/dist
 ```
 
 The viewer reimplements the checks in TypeScript, so it needs no server: the schema rules come from a JSON model generated from the same XSDs (`tools/SchemaModel`), and the business rules are ported line for line. Its tests run all 45 conformance cases and require the same verdict and the same codes as the .NET library, and pin line and column numbers that both must report.
 
 The page has a strict Content-Security-Policy (`connect-src 'none'`): it can't send the message anywhere even by mistake. Large statements (tested up to 21 MB, 840,000 lines) open in a read-only view that only draws the visible lines.
+
+## Security
+
+Messages are treated as hostile input: no DTDs or external entities, nothing fetched, size, depth and issue limits, and warnings for invisible or direction-changing characters that could make a payee's name display differently from what it is. `tests/hostile/` holds 44 such inputs that both the .NET library and the viewer must handle the same way. See [SECURITY.md](SECURITY.md) for the details and how to report a problem.
 
 ## Conformance suite
 
@@ -116,7 +121,7 @@ New cases are the most useful contribution: the suite was written alongside this
 |---|---|
 | `src/Iso20022Kit` | The library. `Generated/` holds the types generated from the schemas (`scripts/generate.sh`). |
 | `src/Iso20022Kit.Cli` | The `iso20022` command. |
-| `tests/` | .NET tests, including every conformance case. |
+| `tests/` | .NET tests, including every conformance case, and `tests/hostile/`: inputs that try to break or mislead a validator. |
 | `viewer/` | The browser viewer (TypeScript, no framework, about 35 KB gzipped). |
 | `conformance/` | The language-neutral test suite and the runners for other libraries. |
 | `schemas/` | The official ISO 20022 XSDs (see [NOTICE](NOTICE)). |

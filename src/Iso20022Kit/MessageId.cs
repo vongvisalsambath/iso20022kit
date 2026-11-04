@@ -43,6 +43,6 @@ public readonly partial record struct MessageId(string Area, string Number, stri
         return true;
     }
 
-    [GeneratedRegex(@"^([a-z]{4})\.(\d{3})\.(\d{3})\.(\d{2})$")]
+    [GeneratedRegex(@"^([a-z]{4})\.([0-9]{3})\.([0-9]{3})\.([0-9]{2})\z")] // [0-9], not \d (which matches any script's digits); \z, not $ (which allows a final newline)
     private static partial Regex IdPattern();
 }

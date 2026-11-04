@@ -7,12 +7,14 @@
   "type": "module",
   "scripts": {
     "build": "esbuild src/app.ts --bundle --minify --format=esm --target=es2020 --loader:.xml=text --outfile=dist/app.js && node scripts/copy.mjs",
-    "dev": "npm run build && esbuild src/app.ts --bundle --format=esm --target=es2020 --loader:.xml=text --outfile=dist/app.js --servedir=dist --watch",
+    "dev": "npm run build && esbuild src/app.ts --bundle --format=esm --target=es2020 --loader:.xml=text --outfile=dist/app.js --servedir=dist --serve=127.0.0.1:8000 --watch",
     "typecheck": "tsc --noEmit",
-    "test": "esbuild test/conformance.test.ts --bundle --platform=node --format=esm --outfile=.test/conformance.mjs --log-level=warning && node --test .test/conformance.mjs"
+    "test": "esbuild test/conformance.test.ts test/hostile.test.ts --bundle --platform=node --format=esm --outdir=.test --log-level=warning && node --test --test-timeout=120000 .test/conformance.test.js .test/hostile.test.js",
+    "test:e2e": "node test/e2e.mjs"
   },
   "devDependencies": {
-    "esbuild": "0.24.2",
+    "esbuild": "0.28.2",
+    "playwright": "1.63.0",
     "typescript": "5.7.3"
   },
   "dependencies": {

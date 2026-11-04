@@ -37,20 +37,39 @@ public static class Iso20022
     public static ValidationReport Validate(string xml, ValidationOptions? options = null) =>
         Validator.Validate(new StringReader(xml), options ?? ValidationOptions.Default);
 
-    /// <summary>Checks a message read from a stream (UTF-8 unless the XML declaration says otherwise).</summary>
+    /// <summary>
+    /// Checks a message read from a stream of bytes. The encoding comes from the byte-order mark or the XML declaration
+    /// (UTF-8 when neither says otherwise), and bytes that aren't valid in it make the message malformed rather than
+    /// being silently replaced. The stream is read to the end but not closed.
+    /// </summary>
     public static ValidationReport Validate(Stream xml, ValidationOptions? options = null)
     {
-        using var reader = new StreamReader(xml, Encoding.UTF8, detectEncodingFromByteOrderMarks: true, leaveOpen: true);
-        return Validator.Validate(reader, options ?? ValidationOptions.Default);
+        ArgumentNullException.ThrowIfNull(xml);
+        return Validator.Validate(new NonClosingStream(xml), options ?? ValidationOptions.Default);
+    }
+
+    /// <summary>The message type of a stream of bytes, or null when it isn't a recognisable ISO 20022 message.</summary>
+    public static MessageId? Detect(Stream xml)
+    {
+        ArgumentNullException.ThrowIfNull(xml);
+        return Validator.Parse(new NonClosingStream(xml)).Id;
     }
 
     /// <summary>Reads a pacs.008 customer credit transfer. <see cref="ReadResult{T}.Value"/> is set when the message matches the schema, even if a business rule fails.</summary>
     public static ReadResult<CreditTransfer> ReadCreditTransfer(string xml, ValidationOptions? options = null) =>
-        ReadModel(xml, "pacs.008", options, (m, d) => m.CreditTransfer(d));
+        ReadModel(Validator.Parse(new StringReader(xml)), "pacs.008", options, (m, d) => m.CreditTransfer(d));
+
+    /// <summary>Reads a pacs.008 from a stream of bytes (see <see cref="Validate(Stream, ValidationOptions?)"/> for how it is decoded).</summary>
+    public static ReadResult<CreditTransfer> ReadCreditTransfer(Stream xml, ValidationOptions? options = null) =>
+        ReadModel(Validator.Parse(new NonClosingStream(xml ?? throw new ArgumentNullException(nameof(xml)))), "pacs.008", options, (m, d) => m.CreditTransfer(d));
 
     /// <summary>Reads a camt.053 bank-to-customer statement. <see cref="ReadResult{T}.Value"/> is set when the message matches the schema, even if a business rule fails.</summary>
     public static ReadResult<BankStatement> ReadBankStatement(string xml, ValidationOptions? options = null) =>
-        ReadModel(xml, "camt.053", options, (m, d) => m.BankStatement(d));
+        ReadModel(Validator.Parse(new StringReader(xml)), "camt.053", options, (m, d) => m.BankStatement(d));
+
+    /// <summary>Reads a camt.053 from a stream of bytes (see <see cref="Validate(Stream, ValidationOptions?)"/> for how it is decoded).</summary>
+    public static ReadResult<BankStatement> ReadBankStatement(Stream xml, ValidationOptions? options = null) =>
+        ReadModel(Validator.Parse(new NonClosingStream(xml ?? throw new ArgumentNullException(nameof(xml)))), "camt.053", options, (m, d) => m.BankStatement(d));
 
     /// <summary>
     /// Reads a message into its generated type, with every field of the schema, e.g.
@@ -80,8 +99,16 @@ public static class Iso20022
         var ns = new XmlSerializerNamespaces();
         ns.Add("", id.Namespace);
         var sb = new StringBuilder();
-        using (var writer = XmlWriter.Create(new Utf8StringWriter(sb), new XmlWriterSettings { Indent = true, IndentChars = "  ", Encoding = new UTF8Encoding(false) }))
+        try
+        {
+            using var writer = XmlWriter.Create(new Utf8StringWriter(sb), new XmlWriterSettings { Indent = true, IndentChars = "  ", Encoding = new UTF8Encoding(false) });
             Catalog.Serializer(document.GetType()).Serialize(writer, document, ns);
+        }
+        catch (InvalidOperationException e) when (e.InnerException is ArgumentException inner)
+        {
+            // XmlSerializer wraps "'\u0001', hexadecimal value 0x01, is an invalid character" in a vague message
+            throw new ArgumentException($"The message can't be written as XML: {SafeText.Clean(inner.Message)} Remove control characters from the values.", nameof(document), inner);
+        }
         var xml = sb.ToString();
         if (validate)
         {
@@ -91,9 +118,8 @@ public static class Iso20022
         return xml;
     }
 
-    private static ReadResult<T> ReadModel<T>(string xml, string family, ValidationOptions? options, Func<Mapper, XElement, T> map) where T : class
+    private static ReadResult<T> ReadModel<T>(ParsedInput parsed, string family, ValidationOptions? options, Func<Mapper, XElement, T> map) where T : class
     {
-        var parsed = Validator.Parse(new StringReader(xml));
         if (parsed.Document is null || parsed.Id is not MessageId id) return new ReadResult<T>(new ValidationReport(parsed.Id, parsed.Issues), null);
         if (id.Family != family) return WrongType<T>(id, family, parsed.Document);
         if (parsed.Issues.Count > 0) return new ReadResult<T>(new ValidationReport(id, parsed.Issues), null);
@@ -135,4 +161,20 @@ public sealed class ReadResult<T> where T : class
 
     /// <summary>The value; throws <see cref="Iso20022ValidationException"/> when the message has errors.</summary>
     public T ValueOrThrow() => IsValid ? Value! : throw new Iso20022ValidationException(Report);
+}
+
+/// <summary>Lets the XML reader dispose its stream without closing the caller's.</summary>
+internal sealed class NonClosingStream(Stream inner) : Stream
+{
+    public override bool CanRead => inner.CanRead;
+    public override bool CanSeek => false;
+    public override bool CanWrite => false;
+    public override long Length => throw new NotSupportedException();
+    public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+    public override int Read(byte[] buffer, int offset, int count) => inner.Read(buffer, offset, count);
+    public override int Read(Span<byte> buffer) => inner.Read(buffer);
+    public override void Flush() { }
+    public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+    public override void SetLength(long value) => throw new NotSupportedException();
+    public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
 }

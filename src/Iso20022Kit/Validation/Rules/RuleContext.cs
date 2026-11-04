@@ -12,7 +12,7 @@ internal interface IRule
     void Check(RuleContext context);
 }
 
-internal sealed class RuleContext(XElement document, MessageId id, List<Issue> issues, ValidationOptions options)
+internal sealed class RuleContext(XElement document, MessageId id, List<Issue> issues, ValidationOptions options, int limit)
 {
     public XElement Document { get; } = document;
     public MessageId Id { get; } = id;
@@ -21,6 +21,7 @@ internal sealed class RuleContext(XElement document, MessageId id, List<Issue> i
 
     public void Report(Severity severity, string code, string message, XObject at)
     {
+        if (issues.Count >= limit) throw new Validator.IssueLimitReached();
         var (line, col) = XmlInput.Position(at);
         issues.Add(new Issue(severity, code, message, XmlInput.PathOf(at), line, col));
     }

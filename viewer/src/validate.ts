@@ -1,7 +1,7 @@
 // Validates an ISO 20022 message in the browser: the official schema (via the JSON model generated from the XSD
 // by tools/SchemaModel) and the same business rules as the .NET library. Codes match docs/rules.md, and the
 // conformance suite checks both give the same verdicts.
-import { parseXml, pathOf, child, children, text, attr, XmlError, type XElement } from "./xml";
+import { parseXml, pathOf, child, children, text, attr, XmlError, isXmlSpace, xmlTrim, XMLNS, XML_NS, type XElement, type XAttr } from "./xml";
 import pacs008 from "./schemas/pacs.008.001.08.json";
 import camt053 from "./schemas/camt.053.001.08.json";
 
@@ -20,12 +20,17 @@ export const MODELS: Record<string, SchemaModel> = {
   "camt.053.001.08": camt053 as unknown as SchemaModel,
 };
 export const SUPPORTED = Object.keys(MODELS);
+const XSI = "http://www.w3.org/2001/XMLSchema-instance";
+/** Stop after this many issues, as the .NET library does (ValidationOptions.MaxIssues). */
+export const MAX_ISSUES = 1000;
+class IssueLimitReached extends Error {}
 
 /** Every check, with a one-line description (the same text as the .NET library's RuleDescriptions). */
 export const RULES: Record<string, string> = {
   SCHEMA: "The message must match the official ISO 20022 schema for its type and version.",
   "AMOUNT-DECIMALS": "An amount may not have more decimals than its currency allows in ISO 4217 (USD 2, JPY 0, KWD 3).",
   "CURRENCY-UNKNOWN": "Warning: the currency code is not an active ISO 4217 code with minor units.",
+  "HIDDEN-CHARACTERS": "Warning: a value contains an invisible or direction-changing character (e.g. a right-to-left override), which can make it display differently from what it is.",
   "IBAN-CHECKSUM": "An IBAN's two check digits must be correct (ISO 13616 mod 97).",
   "PACS008-NBOFTXS": "pacs.008: GrpHdr/NbOfTxs must equal the number of CdtTrfTxInf transactions.",
   "PACS008-CTRLSUM": "pacs.008: GrpHdr/CtrlSum, when present, must equal the sum of every IntrBkSttlmAmt.",
@@ -46,19 +51,21 @@ export interface Result {
 }
 
 export function detect(xml: string): string | null {
-  try { return findDocument(parseXml(xml))?.ns.slice(NS_PREFIX.length) ?? null; } catch { return null; }
+  try { return findDocuments(parseXml(xml))[0]?.ns.slice(NS_PREFIX.length) ?? null; } catch { return null; }
 }
 
-function findDocument(root: XElement): XElement | null {
+/** The ISO Document elements: the root, or up to two found inside an envelope (two is an error). */
+function findDocuments(root: XElement): XElement[] {
   const isDoc = (e: XElement) => e.local === "Document" && e.ns.startsWith(NS_PREFIX);
-  if (isDoc(root)) return root;
-  const stack = [...root.children];
-  while (stack.length) {
-    const e = stack.shift()!;
-    if (isDoc(e)) return e;
-    stack.push(...e.children);
+  if (isDoc(root)) return [root];
+  const found: XElement[] = [];
+  const queue = [...root.children];
+  for (let k = 0; k < queue.length && found.length < 2; k++) { // an index, not shift(): shift() is O(n), so a wide file took minutes
+    const e = queue[k];
+    if (isDoc(e)) found.push(e);
+    else for (const c of e.children) queue.push(c);
   }
-  return null;
+  return found;
 }
 
 export function validate(xml: string, disabled: string[] = []): Result {
@@ -69,7 +76,12 @@ export function validate(xml: string, disabled: string[] = []): Result {
     if (e instanceof XmlError) return done(null, [{ severity: "error", code: e.code, message: e.message, line: e.line, col: e.col }], null, null);
     throw e;
   }
-  const doc = findDocument(root);
+  const docs = findDocuments(root);
+  if (docs.length > 1) {
+    return done(null, [{ severity: "error", code: "MSG-MULTIPLE-DOCUMENTS", path: pathOf(docs[1]), line: docs[1].line, col: docs[1].col,
+      message: "The input holds more than one ISO 20022 Document element. Check and send them one at a time." }], null, root);
+  }
+  const doc = docs[0];
   if (!doc) {
     return done(null, [{ severity: "error", code: "MSG-NO-DOCUMENT", path: "/" + root.local, line: root.line, col: root.col,
       message: `No ISO 20022 Document element found. The root element is <${root.local}> in namespace "${root.ns}"; expected <Document xmlns="${NS_PREFIX}…">.` }], null, root);
@@ -86,14 +98,56 @@ export function validate(xml: string, disabled: string[] = []): Result {
       message: `${id} is not supported yet. Supported messages: ${SUPPORTED.join(", ")}.${same.length ? ` For ${family}, only ${same.join(" and ")} ${same.length === 1 ? "is" : "are"} supported.` : ""}` }], doc, root);
   }
   const issues: Issue[] = [];
-  new SchemaChecker(model, issues).element(doc, model.rootType);
-  if (!issues.length) runRules(id, doc, issues, disabled);
+  try {
+    new SchemaChecker(model, issues).element(doc, model.rootType);
+    if (!issues.length) runRules(id, doc, issues, disabled);
+  } catch (e) {
+    if (!(e instanceof IssueLimitReached)) throw e;
+    issues.push({ severity: "warning", code: "TOO-MANY-ISSUES", message: `Stopped after ${MAX_ISSUES} issues; the message may have more.` });
+  }
   issues.sort((a, b) => (a.severity === b.severity ? 0 : a.severity === "error" ? -1 : 1) || (a.line ?? 1e9) - (b.line ?? 1e9) || (a.col ?? 1e9) - (b.col ?? 1e9));
   return done(id, issues, doc, root);
 }
 
 function done(message: string | null, issues: Issue[], document: XElement | null, root: XElement | null): Result {
-  return { message, issues, valid: !issues.some((i) => i.severity === "error"), document, root };
+  // Messages and paths quote the input: make hidden characters visible and keep the length sane.
+  const cleaned = issues.map((i) => ({ ...i, message: cleanText(i.message), path: i.path === undefined ? undefined : cleanText(i.path) }));
+  return { message, issues: cleaned, valid: !issues.some((i) => i.severity === "error"), document, root };
+}
+
+/** Characters that can't be seen, or that change how the text around them is displayed (same list as the .NET library). */
+export function isHidden(c: number): boolean {
+  return (c < 0x20 && c !== 9 && c !== 10 && c !== 13) || (c >= 0x7f && c <= 0x9f) || c === 0xad || c === 0x061c || c === 0x180e ||
+    (c >= 0x200b && c <= 0x200f) || (c >= 0x2028 && c <= 0x202e) || (c >= 0x2060 && c <= 0x2064) || (c >= 0x2066 && c <= 0x2069) ||
+    c === 0xfeff || (c >= 0xfff9 && c <= 0xfffb);
+}
+export const HIDDEN = /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F\u00AD\u061C\u180E\u200B-\u200F\u2028-\u202E\u2060-\u2064\u2066-\u2069\uFEFF\uFFF9-\uFFFB]/;
+const HIDDEN_ALL = new RegExp(HIDDEN.source + "|[\\uD800-\\uDBFF](?![\\uDC00-\\uDFFF])|(?<![\\uD800-\\uDBFF])[\\uDC00-\\uDFFF]", "g");
+export const escapeChar = (c: number) => "\\u" + c.toString(16).toUpperCase().padStart(4, "0");
+export function describeChar(c: number): string {
+  const names: Record<number, string> = {
+    0x202e: "RIGHT-TO-LEFT OVERRIDE", 0x202d: "LEFT-TO-RIGHT OVERRIDE", 0x202b: "RIGHT-TO-LEFT EMBEDDING", 0x202a: "LEFT-TO-RIGHT EMBEDDING",
+    0x202c: "POP DIRECTIONAL FORMATTING", 0x2066: "LEFT-TO-RIGHT ISOLATE", 0x2067: "RIGHT-TO-LEFT ISOLATE", 0x2068: "FIRST STRONG ISOLATE",
+    0x2069: "POP DIRECTIONAL ISOLATE", 0x200e: "LEFT-TO-RIGHT MARK", 0x200f: "RIGHT-TO-LEFT MARK", 0x200b: "ZERO WIDTH SPACE",
+    0x200c: "ZERO WIDTH NON-JOINER", 0x200d: "ZERO WIDTH JOINER", 0x2060: "WORD JOINER", 0xfeff: "ZERO WIDTH NO-BREAK SPACE", 0xad: "SOFT HYPHEN",
+  };
+  return names[c] ?? (c >= 0x80 && c <= 0x9f ? "C1 CONTROL" : "INVISIBLE CHARACTER");
+}
+const MAX_TEXT = 600;
+/** Escapes hidden characters (\u202E) and shortens very long text in the middle, keeping its start and end. */
+export function cleanText(t: string): string {
+  if (t.length <= MAX_TEXT && !HIDDEN_ALL.test(t)) { HIDDEN_ALL.lastIndex = 0; return t; }
+  HIDDEN_ALL.lastIndex = 0;
+  const s = t.replace(HIDDEN_ALL, (ch) => escapeChar(ch.charCodeAt(0)));
+  if (s.length <= MAX_TEXT) return s;
+  const cut = (from: number, to: number) => {
+    if (from > 0 && /[\uDC00-\uDFFF]/.test(s[from])) from++;
+    if (to < s.length && /[\uD800-\uDBFF]/.test(s[to - 1])) to--;
+    return s.slice(from, to);
+  };
+  const head = cut(0, Math.floor(MAX_TEXT * 2 / 3));
+  const tail = cut(s.length - Math.floor(MAX_TEXT / 4), s.length);
+  return `${head}…(${(s.length - head.length - tail.length).toLocaleString("en")} characters omitted)…${tail}`;
 }
 
 // ------------------------------------------------------------------ schema
@@ -101,15 +155,40 @@ function done(message: string | null, issues: Issue[], document: XElement | null
 class SchemaChecker {
   constructor(private model: SchemaModel, private issues: Issue[]) {}
 
-  private err(el: XElement, message: string, attrName?: string) {
-    const a = attrName ? el.attrs.find((x) => x.local === attrName) : undefined;
-    this.issues.push({ severity: "error", code: "SCHEMA", message, path: pathOf(el, attrName), line: a?.line ?? el.line, col: a?.col ?? el.col });
+  private err(el: XElement, message: string, a?: XAttr) {
+    if (this.issues.length >= MAX_ISSUES) throw new IssueLimitReached();
+    this.issues.push({ severity: "error", code: "SCHEMA", message, path: pathOf(el, a?.local), line: a?.line ?? el.line, col: a?.col ?? el.col });
+  }
+
+  /**
+   * Attributes outside the no-namespace set, checked as .NET's validator does: namespace declarations, xml:* and
+   * xsi:schemaLocation are fine (the locations are never fetched); xsi:nil isn't (no ISO element is nillable); xsi:type
+   * only when it names the element's own type; anything in another namespace isn't declared, so it's an error.
+   */
+  private foreignAttributes(el: XElement, typeName: string) {
+    for (const a of el.attrs) {
+      if (a.ns === "" || a.ns === XMLNS || a.ns === XML_NS) continue;
+      if (a.ns === XSI) {
+        if (a.local === "schemaLocation" || a.local === "noNamespaceSchemaLocation") continue;
+        if (a.local === "nil") { this.err(el, `xsi:nil is not allowed: <${el.local}> can't be nil in the schema.`, a); continue; }
+        if (a.local === "type") {
+          const v = xmlTrim(a.value);
+          const idx = v.indexOf(":");
+          const prefix = idx < 0 ? "" : v.slice(0, idx), local = idx < 0 ? v : v.slice(idx + 1);
+          const ns = prefix in el.scope ? el.scope[prefix] : undefined;
+          if (ns !== this.model.namespace || local !== typeName) this.err(el, `The xsi:type "${v}" is not valid for <${el.local}>, whose type is ${typeName}.`, a);
+          continue;
+        }
+      }
+      this.err(el, `The attribute ${a.ns}:${a.local} is not declared.`, a);
+    }
   }
 
   element(el: XElement, typeName: string) {
     if (el.ns !== this.model.namespace) { this.err(el, `<${el.local}> is in namespace "${el.ns}", not the message's namespace.`); return; }
+    this.foreignAttributes(el, typeName);
     if (typeName.startsWith("xs:")) { this.simpleValue(el, el.text, { kind: "simple", base: typeName.slice(3) }); this.noChildren(el); return; }
-    const t = this.model.types[typeName];
+    const t = Object.hasOwn(this.model.types, typeName) ? this.model.types[typeName] : undefined;
     if (!t) { this.err(el, `Unknown type ${typeName}.`); return; }
     if (t.kind === "simple") {
       this.noAttributes(el);
@@ -121,22 +200,22 @@ class SchemaChecker {
         const v = attr(el, a.name);
         if (!v) { if (a.required) this.err(el, `<${el.local}> needs the attribute ${a.name}.`); continue; }
         const at = this.model.types[a.type];
-        if (at?.kind === "simple") this.simpleValue(el, v.value, at, a.name);
+        if (at?.kind === "simple") this.simpleValue(el, v.value, at, v);
       }
       for (const a of el.attrs) {
-        if (a.ns === "" && !t.attributes.some((d) => d.name === a.local)) this.err(el, `The attribute ${a.local} is not allowed on <${el.local}>.`, a.local);
+        if (a.ns === "" && !t.attributes.some((d) => d.name === a.local)) this.err(el, `The attribute ${a.local} is not allowed on <${el.local}>.`, a);
       }
       const vt = this.model.types[t.value];
       if (vt?.kind === "simple") this.simpleValue(el, el.text, vt);
     } else {
       this.noAttributes(el);
-      if (el.text.trim()) { this.err(el, `<${el.local}> may only contain elements, not text.`); return; }
+      if (!isXmlSpace(el.text)) { this.err(el, `<${el.local}> may only contain elements, not text.`); return; }
       this.content(el, t);
     }
   }
 
   private noAttributes(el: XElement) {
-    for (const a of el.attrs) if (a.ns === "") this.err(el, `The attribute ${a.local} is not allowed on <${el.local}>.`, a.local);
+    for (const a of el.attrs) if (a.ns === "") this.err(el, `The attribute ${a.local} is not allowed on <${el.local}>.`, a);
   }
   private noChildren(el: XElement) {
     if (el.children.length) this.err(el.children[0], `<${el.parent?.local ?? el.local}> holds a value; it can't contain <${el.children[0].local}>.`);
@@ -182,10 +261,11 @@ class SchemaChecker {
     }
   }
 
-  private simpleValue(el: XElement, raw: string, t: Extract<TypeDef, { kind: "simple" }>, attrName?: string) {
-    const where = attrName ? `The ${attrName} attribute of <${el.local}>` : `<${el.local}>`;
-    const v = t.base === "string" ? raw : raw.trim();
-    const bad = (why: string) => this.err(el, `${where} ${why}`, attrName);
+  private simpleValue(el: XElement, raw: string, t: Extract<TypeDef, { kind: "simple" }>, a?: XAttr) {
+    const where = a ? `The ${a.local} attribute of <${el.local}>` : `<${el.local}>`;
+    // XSD whitespace: strings keep theirs; other types collapse XML whitespace (only space, tab, CR, LF)
+    const v = t.base === "string" ? raw : raw.replace(/[\t\n\r]/g, " ").replace(/ {2,}/g, " ").replace(/^ | $/g, "");
+    const bad = (why: string) => this.err(el, `${where} ${why}`, a);
     switch (t.base) {
       case "decimal": if (!/^[+-]?(\d+(\.\d*)?|\.\d+)$/.test(v)) return bad(`must be a number, got "${v}".`); break;
       case "boolean": if (!/^(true|false|1|0)$/.test(v)) return bad(`must be true or false, got "${v}".`); break;
@@ -313,7 +393,8 @@ const eq = (a: string, b: bigint, scale: number) => {
 function runRules(id: string, doc: XElement, issues: Issue[], disabled: string[]) {
   const push = (severity: Severity, code: string, message: string, el: XElement, attrName?: string) => {
     if (disabled.includes(code)) return;
-    const a = attrName ? el.attrs.find((x) => x.local === attrName) : undefined;
+    if (issues.length >= MAX_ISSUES) throw new IssueLimitReached();
+    const a = attrName ? el.attrs.find((x) => x.local === attrName && x.ns === "") : undefined;
     issues.push({ severity, code, message, path: pathOf(el, attrName), line: a?.line ?? el.line, col: a?.col ?? el.col });
   };
   const all: XElement[] = [];
@@ -324,7 +405,7 @@ function runRules(id: string, doc: XElement, issues: Issue[], disabled: string[]
     const ccy = attr(e, "Ccy");
     if (!ccy || e.children.length) continue;
     const code = ccy.value.trim(), value = e.text.trim();
-    const allowed = CURRENCY_DECIMALS[code];
+    const allowed = Object.hasOwn(CURRENCY_DECIMALS, code) ? CURRENCY_DECIMALS[code] : undefined;
     if (allowed === undefined) {
       push("warning", "CURRENCY-UNKNOWN", `"${code}" is not an active ISO 4217 currency with minor units, so its decimals can't be checked.`, e, "Ccy");
       continue;
@@ -336,7 +417,21 @@ function runRules(id: string, doc: XElement, issues: Issue[], disabled: string[]
   // IBAN-CHECKSUM
   for (const e of all.filter((x) => x.local === "IBAN")) {
     const iban = e.text.trim();
-    if (!ibanValid(iban)) push("error", "IBAN-CHECKSUM", `${iban} is not a valid IBAN: its check digits (${iban.slice(2, 4)}) don't match the rest of the number.`, e);
+    if (!ibanValid(iban)) push("error", "IBAN-CHECKSUM", `${iban} is not a valid IBAN: its check digits (${iban.length >= 4 ? iban.slice(2, 4) : "missing"}) don't match the rest of the number.`, e);
+  }
+
+  // HIDDEN-CHARACTERS (warning): "Acme\u202E0001" displays as "Acme1000"
+  if (!disabled.includes("HIDDEN-CHARACTERS")) {
+    const inspect = (value: string, el: XElement, what: string, attrName?: string) => {
+      const m = HIDDEN.exec(value);
+      if (!m) return;
+      const c = m[0].charCodeAt(0);
+      push("warning", "HIDDEN-CHARACTERS", `${what} contains an invisible ${escapeChar(c)} (${describeChar(c)}) character, which can make it display differently from what it is.`, el, attrName);
+    };
+    for (const e of all) {
+      if (!e.children.length) inspect(e.text, e, `<${e.local}>`);
+      for (const a of e.attrs) if (a.ns !== XMLNS) inspect(a.value, e, `The ${a.local} attribute of <${e.local}>`, a.ns === "" ? a.local : undefined);
+    }
   }
 
   if (id.startsWith("pacs.008")) {

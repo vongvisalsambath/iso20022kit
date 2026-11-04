@@ -4,7 +4,7 @@ namespace Iso20022Kit.Validation.Rules;
 
 internal static class RuleSet
 {
-    private static readonly IRule[] Common = [new AmountDecimalsRule(), new IbanCheckDigitsRule()];
+    private static readonly IRule[] Common = [new AmountDecimalsRule(), new IbanCheckDigitsRule(), new HiddenCharactersRule()];
     private static readonly IRule[] Pacs008 = [new Pacs008NumberOfTransactionsRule(), new Pacs008ControlSumRule(), new Pacs008TotalAmountRule()];
     private static readonly IRule[] Camt053 = [new Camt053BalanceRule(), new Camt053SummaryRule()];
 
@@ -21,6 +21,7 @@ internal static class RuleSet
         ["SCHEMA"] = "The message must match the official ISO 20022 schema for its type and version.",
         ["AMOUNT-DECIMALS"] = "An amount may not have more decimals than its currency allows in ISO 4217 (USD 2, JPY 0, KWD 3).",
         ["CURRENCY-UNKNOWN"] = "Warning: the currency code is not an active ISO 4217 code with minor units.",
+        ["HIDDEN-CHARACTERS"] = "Warning: a value contains an invisible or direction-changing character (e.g. a right-to-left override), which can make it display differently from what it is.",
         ["IBAN-CHECKSUM"] = "An IBAN's two check digits must be correct (ISO 13616 mod 97).",
         ["PACS008-NBOFTXS"] = "pacs.008: GrpHdr/NbOfTxs must equal the number of CdtTrfTxInf transactions.",
         ["PACS008-CTRLSUM"] = "pacs.008: GrpHdr/CtrlSum, when present, must equal the sum of every IntrBkSttlmAmt.",
@@ -58,6 +59,35 @@ internal sealed class AmountDecimalsRule : IRule
     }
 }
 
+/// <summary>
+/// HIDDEN-CHARACTERS (warning): text or attribute values with characters that can't be seen or that reorder the text
+/// around them. "Acme\u202E0001" displays as "Acme1000", so a reviewer could approve something other than what is paid.
+/// </summary>
+internal sealed class HiddenCharactersRule : IRule
+{
+    public string Code => "HIDDEN-CHARACTERS";
+
+    public void Check(RuleContext c)
+    {
+        foreach (var e in c.Document.DescendantsAndSelf())
+        {
+            if (!e.HasElements) Inspect(c, e.Value, e, $"<{e.Name.LocalName}>");
+            foreach (var a in e.Attributes())
+                if (!a.IsNamespaceDeclaration) Inspect(c, a.Value, a, $"The {a.Name.LocalName} attribute of <{e.Name.LocalName}>");
+        }
+    }
+
+    private void Inspect(RuleContext c, string value, XObject at, string what)
+    {
+        foreach (var ch in value)
+        {
+            if (!Internal.SafeText.IsHidden(ch)) continue;
+            c.Warn(Code, $"{what} contains an invisible {Internal.SafeText.Escape(ch)} ({Internal.SafeText.Describe(ch)}) character, which can make it display differently from what it is.", at);
+            return;
+        }
+    }
+}
+
 /// <summary>IBAN-CHECKSUM: every IBAN element.</summary>
 internal sealed class IbanCheckDigitsRule : IRule
 {
@@ -69,7 +99,7 @@ internal sealed class IbanCheckDigitsRule : IRule
         {
             var iban = e.Value.Trim();
             if (!Iban.HasValidCheckDigits(iban))
-                c.Error(Code, $"{iban} is not a valid IBAN: its check digits ({iban[2..Math.Min(4, iban.Length)]}) don't match the rest of the number.", e);
+                c.Error(Code, $"{iban} is not a valid IBAN: its check digits ({(iban.Length >= 4 ? iban[2..4] : "missing")}) don't match the rest of the number.", e);
         }
     }
 }

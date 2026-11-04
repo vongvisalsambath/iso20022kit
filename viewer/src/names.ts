@@ -1,7 +1,12 @@
+/** A lookup table without a prototype, so a tag or code such as "__proto__" or "constructor" is just a missing key. */
+export function table<T>(entries: Record<string, T>): Record<string, T> {
+  return Object.assign(Object.create(null) as Record<string, T>, entries);
+}
+
 // Turns ISO 20022 tag names (IntrBkSttlmAmt) into words (Interbank Settlement Amount), and explains the fields
 // people look at most. The abbreviations are ISO 20022's standard ones; the explanations are written for this viewer.
 
-const TOKENS: Record<string, string> = {
+const TOKENS: Record<string, string> = table({
   Accptnc: "Acceptance", Acct: "Account", Actl: "Actual", Actn: "Action", Actvty: "Activity", Addtl: "Additional", Adjstmnt: "Adjustment",
   Admstn: "Administration", Admstr: "Administrator", Adr: "Address", Aggtd: "Aggregated", Agt: "Agent", Agts: "Agents", Amt: "Amount",
   Amts: "Amounts", Amtsd: "Amortised", And: "and", Anncd: "Announced", Any: "Any", Apld: "Applied", Apprvl: "Approval", Attndnc: "Attendance",
@@ -45,7 +50,7 @@ const TOKENS: Record<string, string> = {
   // acronyms and fixed codes
   BICFI: "BIC (Financial Institution)", BIC: "BIC", IBAN: "IBAN", UETR: "UETR", LEI: "LEI", ISIN: "ISIN", PAN: "Card Number (PAN)", POI: "Point of Interaction",
   CLS: "CLS", CSC: "Card Security Code", ICC: "Chip Card", EQ: "Equal", NEQ: "Not Equal", FI: "Financial Institution",
-};
+});
 const KEYS = Object.keys(TOKENS).sort((a, b) => b.length - a.length);
 
 /** Expands an ISO 20022 tag name into words. Unknown parts are kept as written. */
@@ -68,7 +73,7 @@ export function expand(tag: string): string {
 export interface Field { name: string; help?: string }
 
 /** The fields worth explaining, with what they mean in practice. */
-export const FIELDS: Record<string, Field> = {
+export const FIELDS: Record<string, Field> = table({
   Document: { name: "Document", help: "The message itself. Its namespace says which message and version it is." },
   AppHdr: { name: "Business Application Header", help: "Envelope details: who sent the message, to whom, and what it is." },
   FIToFICstmrCdtTrf: { name: "Bank-to-Bank Customer Credit Transfer", help: "A pacs.008: one bank tells another to pay money to a customer on behalf of its own customer." },
@@ -175,19 +180,19 @@ export const FIELDS: Record<string, Field> = {
   AddtlNtryInf: { name: "Additional Entry Information", help: "Free text from the bank about this entry." },
   AddtlStmtInf: { name: "Additional Statement Information" },
   SplmtryData: { name: "Supplementary Data", help: "Extra data a community has agreed to add, outside the standard." },
-};
+});
 
 /** Codes that appear as values, with what they mean. */
-export const CODES: Record<string, Record<string, string>> = {
-  ChrgBr: { DEBT: "the payer pays all charges", CRED: "the payee pays all charges", SHAR: "each side pays its own bank", SLEV: "as the service level says" },
-  SttlmMtd: { INDA: "the instructed bank debits an account it holds for the sender", INGA: "the sender debits an account it holds for the instructed bank", COVE: "a separate cover payment", CLRG: "a clearing system" },
-  CdtDbtInd: { CRDT: "credit", DBIT: "debit" },
-  Cd: {
+export const CODES: Record<string, Record<string, string>> = table({
+  ChrgBr: table({ DEBT: "the payer pays all charges", CRED: "the payee pays all charges", SHAR: "each side pays its own bank", SLEV: "as the service level says" }),
+  SttlmMtd: table({ INDA: "the instructed bank debits an account it holds for the sender", INGA: "the sender debits an account it holds for the instructed bank", COVE: "a separate cover payment", CLRG: "a clearing system" }),
+  CdtDbtInd: table({ CRDT: "credit", DBIT: "debit" }),
+  Cd: table({
     OPBD: "opening booked balance", CLBD: "closing booked balance", PRCD: "previous closing booked balance", CLAV: "closing available balance",
     ITBD: "interim booked balance", ITAV: "interim available balance", FWAV: "forward available balance", OPAV: "opening available balance",
     BOOK: "booked", PDNG: "pending", INFO: "information only",
-  },
-};
+  }),
+});
 
 /** "IntrBkSttlmAmt" → "Interbank Settlement Amount", with the tag kept when the expansion isn't certain. */
 export function label(tag: string): { name: string; help?: string; tag: string } {

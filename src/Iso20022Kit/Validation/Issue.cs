@@ -35,7 +35,8 @@ public sealed class ValidationReport
     internal ValidationReport(MessageId? message, IReadOnlyList<Issue> issues)
     {
         Message = message;
-        Issues = issues;
+        // Messages and paths quote the input: make hidden characters visible and keep the length sane.
+        Issues = issues.Select(i => i with { Message = Internal.SafeText.Clean(i.Message)!, Path = Internal.SafeText.Clean(i.Path) }).ToList();
     }
 
     /// <summary>The message type and version, if it could be recognised.</summary>

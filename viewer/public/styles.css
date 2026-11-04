@@ -243,6 +243,11 @@ li.warning .issue .code { background: var(--warn-soft); color: var(--warn); }
 .node-issues { margin: 2px 0 6px 30px; padding: 0; list-style: none; font-size: 13px; color: var(--bad); }
 .node-issues li.warning { color: var(--warn); }
 
+/* invisible characters made visible */
+.hidden-char { font: 600 0.8em var(--mono); color: var(--bad); background: var(--bad-soft); border-radius: 3px; padding: 0 2px; margin: 0 1px; }
+/* values from the message never change the direction of the text around them */
+dd, td, .value, .msg, .lead, .label { unicode-bidi: isolate; }
+
 /* drop overlay */
 .drop { position: fixed; inset: 0; background: color-mix(in srgb, var(--accent) 18%, transparent); display: grid; place-items: center; z-index: 10; pointer-events: none; }
 .drop[hidden] { display: none; }

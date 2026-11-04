@@ -1,0 +1,470 @@
+{
+  "cases": [
+    {
+      "id": "char-control-raw",
+      "file": "char-control-raw.xml",
+      "description": "A raw U+0001 control character.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "XML-MALFORMED"
+        ]
+      }
+    },
+    {
+      "id": "char-control-ref",
+      "file": "char-control-ref.xml",
+      "description": "&#1; refers to a character XML 1.0 forbids.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "XML-MALFORMED"
+        ]
+      }
+    },
+    {
+      "id": "char-nul-ref",
+      "file": "char-nul-ref.xml",
+      "description": "&#0; (NUL).",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "XML-MALFORMED"
+        ]
+      }
+    },
+    {
+      "id": "char-surrogate-ref",
+      "file": "char-surrogate-ref.xml",
+      "description": "&#xD800; is half a surrogate pair, not a character.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "XML-MALFORMED"
+        ]
+      }
+    },
+    {
+      "id": "char-beyond-unicode-ref",
+      "file": "char-beyond-unicode-ref.xml",
+      "description": "&#x110000; is past the last Unicode code point (crashed the viewer).",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "XML-MALFORMED"
+        ]
+      }
+    },
+    {
+      "id": "char-huge-ref",
+      "file": "char-huge-ref.xml",
+      "description": "A 20-digit character reference (crashed the viewer).",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "XML-MALFORMED"
+        ]
+      }
+    },
+    {
+      "id": "char-fffe-raw",
+      "file": "char-fffe-raw.xml",
+      "description": "U+FFFE is a noncharacter.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "XML-MALFORMED"
+        ]
+      }
+    },
+    {
+      "id": "char-fffe-ref",
+      "file": "char-fffe-ref.xml",
+      "description": "&#xFFFE;.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "XML-MALFORMED"
+        ]
+      }
+    },
+    {
+      "id": "entity-constructor",
+      "file": "entity-constructor.xml",
+      "description": "&constructor; is not a predefined entity (the viewer once read it from Object.prototype).",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "XML-MALFORMED"
+        ]
+      }
+    },
+    {
+      "id": "entity-proto",
+      "file": "entity-proto.xml",
+      "description": "&__proto__;.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "XML-MALFORMED"
+        ]
+      }
+    },
+    {
+      "id": "prefix-tostring",
+      "file": "prefix-tostring.xml",
+      "description": "Undeclared prefix toString: (resolved to a function in the viewer).",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "XML-MALFORMED"
+        ]
+      }
+    },
+    {
+      "id": "prefix-proto",
+      "file": "prefix-proto.xml",
+      "description": "Undeclared prefix __proto__:.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "XML-MALFORMED"
+        ]
+      }
+    },
+    {
+      "id": "xmlns-proto-declared",
+      "file": "xmlns-proto-declared.xml",
+      "description": "Declaring a prefix named __proto__ is legal XML and changes nothing.",
+      "expect": {
+        "valid": true,
+        "codes": []
+      }
+    },
+    {
+      "id": "element-proto",
+      "file": "element-proto.xml",
+      "description": "Elements named __proto__ and constructor (crashed the viewer's field tree).",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "SCHEMA"
+        ]
+      }
+    },
+    {
+      "id": "endtag-other-prefix",
+      "file": "endtag-other-prefix.xml",
+      "description": "</b:Document> closes <a:Document>: same namespace, different name as written.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "XML-MALFORMED"
+        ]
+      }
+    },
+    {
+      "id": "comment-double-hyphen",
+      "file": "comment-double-hyphen.xml",
+      "description": "'--' inside a comment.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "XML-MALFORMED"
+        ]
+      }
+    },
+    {
+      "id": "xml-declaration-late",
+      "file": "xml-declaration-late.xml",
+      "description": "Whitespace before the XML declaration.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "XML-MALFORMED"
+        ]
+      }
+    },
+    {
+      "id": "xml-declaration-inside",
+      "file": "xml-declaration-inside.xml",
+      "description": "An XML declaration inside the document.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "XML-MALFORMED"
+        ]
+      }
+    },
+    {
+      "id": "xml-version-1-1",
+      "file": "xml-version-1-1.xml",
+      "description": "XML 1.1 (different character rules) isn't supported.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "XML-MALFORMED"
+        ]
+      }
+    },
+    {
+      "id": "name-two-colons",
+      "file": "name-two-colons.xml",
+      "description": "A name with two colons.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "XML-MALFORMED"
+        ]
+      }
+    },
+    {
+      "id": "attribute-duplicate-expanded",
+      "file": "attribute-duplicate-expanded.xml",
+      "description": "p:a and q:a with p and q bound to the same namespace are the same attribute.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "XML-MALFORMED"
+        ]
+      }
+    },
+    {
+      "id": "xmlns-prefix-empty",
+      "file": "xmlns-prefix-empty.xml",
+      "description": "xmlns:p=\"\" (undeclaring a prefix is XML 1.1 only).",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "XML-MALFORMED"
+        ]
+      }
+    },
+    {
+      "id": "nbsp-before-root",
+      "file": "nbsp-before-root.xml",
+      "description": "A no-break space is not XML whitespace.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "XML-MALFORMED"
+        ]
+      }
+    },
+    {
+      "id": "nbsp-in-element-only",
+      "file": "nbsp-in-element-only.xml",
+      "description": "A no-break space is text, and GrpHdr may only hold elements.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "SCHEMA"
+        ]
+      }
+    },
+    {
+      "id": "nbsp-after-amount",
+      "file": "nbsp-after-amount.xml",
+      "description": "A no-break space after a decimal isn't collapsed away.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "SCHEMA"
+        ]
+      }
+    },
+    {
+      "id": "attribute-foreign-namespace",
+      "file": "attribute-foreign-namespace.xml",
+      "description": "An attribute in another namespace isn't declared by the schema.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "SCHEMA"
+        ]
+      }
+    },
+    {
+      "id": "element-foreign-namespace",
+      "file": "element-foreign-namespace.xml",
+      "description": "An element in another namespace.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "SCHEMA"
+        ]
+      }
+    },
+    {
+      "id": "xsi-nil",
+      "file": "xsi-nil.xml",
+      "description": "xsi:nil on an element that isn't nillable.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "SCHEMA"
+        ]
+      }
+    },
+    {
+      "id": "xsi-type",
+      "file": "xsi-type.xml",
+      "description": "xsi:type replacing GrpHdr's type with xs:string.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "SCHEMA"
+        ]
+      }
+    },
+    {
+      "id": "xml-lang",
+      "file": "xml-lang.xml",
+      "description": "xml:lang is allowed anywhere.",
+      "expect": {
+        "valid": true,
+        "codes": []
+      }
+    },
+    {
+      "id": "xsi-schemalocation-remote",
+      "file": "xsi-schemalocation-remote.xml",
+      "description": "schemaLocation pointing at a server: ignored, never fetched.",
+      "expect": {
+        "valid": true,
+        "codes": []
+      }
+    },
+    {
+      "id": "xsi-schemalocation-file",
+      "file": "xsi-schemalocation-file.xml",
+      "description": "schemaLocation pointing at a local file: ignored, never read.",
+      "expect": {
+        "valid": true,
+        "codes": []
+      }
+    },
+    {
+      "id": "namespace-trailing-space",
+      "file": "namespace-trailing-space.xml",
+      "description": "A trailing space made .NET check the message against nothing and call it valid.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "MSG-UNKNOWN"
+        ]
+      }
+    },
+    {
+      "id": "namespace-arabic-digits",
+      "file": "namespace-arabic-digits.xml",
+      "description": "Arabic-Indic digits in the version (.NET's \\d matched them).",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "MSG-UNKNOWN"
+        ]
+      }
+    },
+    {
+      "id": "two-documents",
+      "file": "two-documents.xml",
+      "description": "An envelope with two Documents: only the first used to be checked.",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "MSG-MULTIPLE-DOCUMENTS"
+        ]
+      }
+    },
+    {
+      "id": "utf8-invalid-bytes",
+      "file": "utf8-invalid-bytes.xml",
+      "description": "Bytes that aren't UTF-8 (once silently replaced with U+FFFD).",
+      "expect": {
+        "valid": false,
+        "codes": [
+          "XML-MALFORMED"
+        ]
+      }
+    },
+    {
+      "id": "utf16le-bom",
+      "file": "utf16le-bom.xml",
+      "description": "UTF-16 with a byte-order mark.",
+      "expect": {
+        "valid": true,
+        "codes": []
+      }
+    },
+    {
+      "id": "latin1-declared",
+      "file": "latin1-declared.xml",
+      "description": "Declared ISO-8859-1, with é as one byte.",
+      "expect": {
+        "valid": true,
+        "codes": []
+      }
+    },
+    {
+      "id": "crlf-at-max-length",
+      "file": "crlf-at-max-length.xml",
+      "description": "140 characters once CRLF reads as LF (175 if it didn't).",
+      "expect": {
+        "valid": true,
+        "codes": []
+      }
+    },
+    {
+      "id": "cr-only",
+      "file": "cr-only.xml",
+      "description": "Old Mac line endings.",
+      "expect": {
+        "valid": true,
+        "codes": []
+      }
+    },
+    {
+      "id": "bidi-override-in-name",
+      "file": "bidi-override-in-name.xml",
+      "description": "A right-to-left override: 'Doe 0001 DSU' displays reversed.",
+      "expect": {
+        "valid": true,
+        "codes": [
+          "HIDDEN-CHARACTERS"
+        ]
+      }
+    },
+    {
+      "id": "zero-width-in-bic-name",
+      "file": "zero-width-in-bic-name.xml",
+      "description": "A zero-width space hides inside a name.",
+      "expect": {
+        "valid": true,
+        "codes": [
+          "HIDDEN-CHARACTERS"
+        ]
+      }
+    },
+    {
+      "id": "c1-control",
+      "file": "c1-control.xml",
+      "description": "U+009B, a terminal escape in some terminals.",
+      "expect": {
+        "valid": true,
+        "codes": [
+          "HIDDEN-CHARACTERS"
+        ]
+      }
+    },
+    {
+      "id": "markup-in-text",
+      "file": "markup-in-text.xml",
+      "description": "Escaped HTML in a name stays text: it must never become an element in the viewer.",
+      "expect": {
+        "valid": true,
+        "codes": []
+      }
+    }
+  ]
+}

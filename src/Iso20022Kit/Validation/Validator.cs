@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Xml;
 using System.Xml.Linq;
@@ -12,13 +13,17 @@ internal sealed record ParsedInput(XDocument? Xml, XElement? Document, MessageId
 
 internal static partial class Validator
 {
-    public static ParsedInput Parse(TextReader input)
+    public static ParsedInput Parse(TextReader input) => Parse(() => XmlInput.Load(input));
+
+    public static ParsedInput Parse(Stream input) => Parse(() => XmlInput.Load(input));
+
+    private static ParsedInput Parse(Func<XDocument> load)
     {
         var issues = new List<Issue>();
         XDocument xml;
         try
         {
-            xml = XmlInput.Load(input);
+            xml = load();
         }
         catch (XmlException e)
         {
@@ -28,9 +33,14 @@ internal static partial class Validator
                 null, e.LineNumber > 0 ? e.LineNumber : null, e.LinePosition > 0 ? e.LinePosition : null));
             return new ParsedInput(null, null, null, issues);
         }
+        catch (DecoderFallbackException e)
+        {
+            issues.Add(new Issue(Severity.Error, "XML-MALFORMED", $"The bytes aren't valid in the message's encoding ({e.Message.TrimEnd('.')}).", null));
+            return new ParsedInput(null, null, null, issues);
+        }
 
-        var document = XmlInput.FindDocument(xml);
-        if (document is null)
+        var documents = XmlInput.FindDocuments(xml);
+        if (documents.Count == 0)
         {
             var root = xml.Root!;
             var (line, col) = XmlInput.Position(root);
@@ -39,8 +49,19 @@ internal static partial class Validator
                 $"expected <Document xmlns=\"{MessageId.NamespacePrefix}…\">.", "/" + root.Name.LocalName, line, col));
             return new ParsedInput(xml, null, null, issues);
         }
+        if (documents.Count > 1)
+        {
+            // Checking only the first would let the second say anything; a system downstream might read that one.
+            var (line, col) = XmlInput.Position(documents[1]);
+            issues.Add(new Issue(Severity.Error, "MSG-MULTIPLE-DOCUMENTS",
+                "The input holds more than one ISO 20022 Document element. Check and send them one at a time.", XmlInput.PathOf(documents[1]), line, col));
+            return new ParsedInput(xml, null, null, issues);
+        }
+        var document = documents[0];
 
-        if (!MessageId.TryParse(document.Name.NamespaceName, out var id))
+        // The namespace must be exactly the message's: anything else (a trailing space, say) would match no schema
+        // and so be checked against nothing.
+        if (!MessageId.TryParse(document.Name.NamespaceName, out var id) || document.Name.NamespaceName != id.Namespace)
         {
             var (line, col) = XmlInput.Position(document);
             issues.Add(new Issue(Severity.Error, "MSG-UNKNOWN", $"\"{document.Name.NamespaceName}\" is not a recognisable ISO 20022 message namespace.", "/Document", line, col));
@@ -59,26 +80,48 @@ internal static partial class Validator
         return new ParsedInput(xml, document, id, issues);
     }
 
-    public static ValidationReport Validate(TextReader input, ValidationOptions options)
+    public static ValidationReport Validate(TextReader input, ValidationOptions options) => Validate(Parse(input), options);
+
+    public static ValidationReport Validate(Stream input, ValidationOptions options) => Validate(Parse(input), options);
+
+    private static ValidationReport Validate(ParsedInput parsed, ValidationOptions options)
     {
-        var parsed = Parse(input);
         if (parsed.Issues.Count > 0 || parsed.Document is null || parsed.Id is not MessageId id)
             return new ValidationReport(parsed.Id, parsed.Issues);
         return Validate(parsed.Document, id, options);
     }
 
+    /// <summary>Thrown inside validation once <see cref="ValidationOptions.MaxIssues"/> issues have been found, to stop early.</summary>
+    internal sealed class IssueLimitReached : Exception;
+
     public static ValidationReport Validate(XElement document, MessageId id, ValidationOptions options)
     {
         var issues = new List<Issue>();
-        ValidateSchema(document, id, issues);
-        if (issues.Count == 0 || options.AlwaysRunRules)
+        var limit = Math.Max(1, options.MaxIssues);
+        try
         {
-            var context = new RuleContext(document, id, issues, options);
-            foreach (var rule in RuleSet.For(id))
+            ValidateSchema(document, id, issues, limit);
+            if (issues.Count == 0 || options.AlwaysRunRules)
             {
-                if (options.DisabledRules.Contains(rule.Code)) continue;
-                rule.Check(context);
+                var context = new RuleContext(document, id, issues, options, limit);
+                foreach (var rule in RuleSet.For(id))
+                {
+                    if (options.DisabledRules.Contains(rule.Code)) continue;
+                    try
+                    {
+                        rule.Check(context);
+                    }
+                    catch (OverflowException)
+                    {
+                        // Only possible with AlwaysRunRules: the schema caps amounts at 18 digits, far from decimal's limit.
+                        // The schema errors already say what's wrong with these values.
+                    }
+                }
             }
+        }
+        catch (IssueLimitReached)
+        {
+            issues.Add(new Issue(Severity.Warning, "TOO-MANY-ISSUES", $"Stopped after {limit} issues; the message may have more."));
         }
         var ordered = issues
             .OrderBy(i => i.Severity)
@@ -88,7 +131,7 @@ internal static partial class Validator
         return new ValidationReport(id, ordered);
     }
 
-    private static void ValidateSchema(XElement document, MessageId id, List<Issue> issues)
+    private static void ValidateSchema(XElement document, MessageId id, List<Issue> issues, int limit)
     {
         var schemas = Catalog.Schemas(id);
         XDocument target;
@@ -114,12 +157,21 @@ internal static partial class Validator
 
         target.Validate(schemas, (sender, e) =>
         {
+            if (issues.Count >= limit) throw new IssueLimitReached();
             var node = sender as XObject;
             if (node is not null && map is not null && map.TryGetValue(node, out var original)) node = original;
             var (line, col) = node is null ? (null, null) : XmlInput.Position(node);
             issues.Add(new Issue(e.Severity == XmlSeverityType.Error ? Severity.Error : Severity.Warning, "SCHEMA",
                 Tidy(e.Message), node is null ? null : XmlInput.PathOf(node), line, col));
-        });
+        }, addSchemaInfo: true);
+
+        // Belt and braces: if the Document wasn't assessed against the schema at all (no matching declaration),
+        // say so rather than report a message that nothing checked as valid.
+        if (issues.Count == 0 && target.Root!.GetSchemaInfo()?.Validity != XmlSchemaValidity.Valid)
+        {
+            var (line, col) = XmlInput.Position(document);
+            issues.Add(new Issue(Severity.Error, "SCHEMA", $"The Document couldn't be checked against the {id} schema.", "/Document", line, col));
+        }
     }
 
     /// <summary>.NET's schema messages repeat the long ISO namespace everywhere; drop it so the message is readable.</summary>
@@ -144,4 +196,10 @@ public sealed class ValidationOptions
 
     /// <summary>Run business rules even when the schema check fails (they may then report knock-on problems). Default false.</summary>
     public bool AlwaysRunRules { get; init; }
+
+    /// <summary>
+    /// Stop after this many issues and add a TOO-MANY-ISSUES warning (default 1000). A broken file can otherwise
+    /// produce an issue for every element, which costs time and memory and helps nobody.
+    /// </summary>
+    public int MaxIssues { get; init; } = 1000;
 }

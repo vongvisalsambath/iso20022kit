@@ -55,6 +55,6 @@ test("issues point at the exact line and column", () => {
 
 test("CRLF line endings and a byte-order mark don't shift positions", () => {
   const xml = readFileSync(join(root, "cases", "pacs008-schema-bad-bic.xml"), "utf8");
-  const r = validate("﻿" + xml.replace(/\n/g, "\r\n"));
+  const r = validate("\uFEFF" + xml.replace(/\n/g, "\r\n"));
   assert.deepEqual(r.issues.map((i) => `${i.line}:${i.col}`), ["103:11"]);
 });

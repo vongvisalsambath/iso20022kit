@@ -1,8 +1,8 @@
 // The viewer page: paste, open or drop a message; it is checked and explained in the browser. Nothing is sent anywhere.
-import { validate, RULES, OPTIONAL_RULES, SUPPORTED, type Issue, type Result } from "./validate";
+import { validate, RULES, OPTIONAL_RULES, SUPPORTED, HIDDEN, escapeChar, type Issue, type Result } from "./validate";
 import { explain, money, friendlyDate, friendlyDateTime, printIban, type Section, type Row } from "./explain";
 import { label, CODES } from "./names";
-import { pathOf, type XElement } from "./xml";
+import { pathOf, decodeXml, type XElement } from "./xml";
 import { SAMPLES } from "./samples";
 
 // ------------------------------------------------------------------ tiny DOM helper (text only, never innerHTML)
@@ -18,8 +18,30 @@ function h<K extends keyof HTMLElementTagNameMap>(tag: K, props: Record<string, 
     else if (k === "style") Object.assign(el.style, v); // CSSOM, which the page's CSP allows (style attributes are not)
     else el.setAttribute(k, v === true ? "" : String(v));
   }
-  for (const c of kids.flat()) if (c !== null && c !== undefined && c !== false) el.append(c);
+  for (const c of kids.flat()) if (c !== null && c !== undefined && c !== false) el.append(typeof c === "string" ? reveal(c) : c);
   return el;
+}
+
+const HIDDEN_G = new RegExp(HIDDEN.source, "g");
+/**
+ * Text from a message can hold invisible or direction-changing characters: "Acme\u202E0001" would display as
+ * "Acme1000". Every string shown on the page goes through here and those characters become visible markers.
+ */
+function reveal(text: string): Node {
+  if (!HIDDEN.test(text)) return document.createTextNode(text);
+  const frag = document.createDocumentFragment();
+  let last = 0;
+  for (const m of text.matchAll(HIDDEN_G)) {
+    frag.append(text.slice(last, m.index));
+    const mark = document.createElement("span");
+    mark.className = "hidden-char";
+    mark.title = "An invisible character in the message";
+    mark.textContent = escapeChar(m[0].charCodeAt(0));
+    frag.append(mark);
+    last = m.index! + m[0].length;
+  }
+  frag.append(text.slice(last));
+  return frag;
 }
 const $ = <T extends HTMLElement>(sel: string) => document.querySelector(sel) as T;
 
@@ -42,6 +64,8 @@ let lineStarts: number[] = [0];
 let timer = 0;
 let lastMs = 0;
 let flash = { line: 0, until: 0 };
+/** A problem found while decoding the file's bytes (invalid UTF-8, unknown encoding); shown until the text changes. */
+let decodeIssue: Issue | null = null;
 /** A message over BIG characters is shown in a read-only view that draws only the visible lines: browsers take
  *  seconds to lay out a textarea holding a 20 MB statement. */
 let big: string | null = null;
@@ -178,6 +202,7 @@ function run() {
   if (!src.trim()) { last = null; drawGutter(); renderEmpty(); return; }
   const started = performance.now();
   last = validate(src, [...disabled]);
+  if (decodeIssue) last = { ...last, issues: [decodeIssue, ...last.issues], valid: false };
   lastMs = performance.now() - started;
   drawGutter();
   render(last, lastMs);
@@ -340,11 +365,21 @@ function codeMeaning(el: XElement): string | null {
 
 function renderFields(r: Result) {
   const issuesAt = new Map<XElement, Issue[]>();
-  const byPath = new Map<string, XElement>();
-  (function index(e: XElement) { byPath.set(pathOf(e), e); e.children.forEach(index); })(r.document!);
+  // Follow each issue's path down from the Document (computing every element's path up front took seconds on big statements).
+  const resolve = (path: string): XElement | null => {
+    const parts = path.replace(/\/@[^/]+$/, "").split("/").filter(Boolean);
+    let cur: XElement | null = r.document;
+    if (!cur || parts.shift()?.replace(/\[\d+\]$/, "") !== cur.local) return null;
+    for (const part of parts) {
+      const m = /^(.*?)(?:\[(\d+)\])?$/.exec(part)!;
+      const same: XElement[] = cur!.children.filter((c) => c.local === m[1]);
+      cur = same[(m[2] ? +m[2] : 1) - 1] ?? null;
+      if (!cur) return null;
+    }
+    return cur;
+  };
   for (const i of r.issues) {
-    const p = i.path?.replace(/\/@[^/]+$/, "");
-    const el = p ? byPath.get(p) : undefined;
+    const el = i.path ? resolve(i.path) : null;
     if (el) issuesAt.set(el, [...(issuesAt.get(el) ?? []), i]);
   }
   const hasIssueInside = new Set<XElement>();
@@ -389,7 +424,8 @@ function renderFields(r: Result) {
 
 // ------------------------------------------------------------------ loading
 
-function load(src: string) {
+function load(src: string, fromFile = false) {
+  if (!fromFile) decodeIssue = null;
   if (!last || tab !== "issues") tab = "summary";
   if (src.length > BIG) { enterBig(src); schedule(); return; }
   leaveBig();
@@ -406,7 +442,11 @@ function loadSample(i: number) {
 }
 async function loadFile(f: File) {
   if (f.size > 50_000_000) { alert("That file is over 50 MB, which is more than this viewer handles."); return; }
-  load(await f.text());
+  // Decode like an XML reader (BOM, then the declared encoding, else UTF-8) and refuse invalid bytes:
+  // File.text() would silently turn them into U+FFFD and the viewer would check different text from the file's.
+  const { text, error } = decodeXml(new Uint8Array(await f.arrayBuffer()));
+  decodeIssue = error ? { severity: "error", code: error.code, message: error.message, line: error.line, col: error.col } : null;
+  load(text, true);
   sampleSelect.value = "";
 }
 
@@ -418,6 +458,7 @@ $<HTMLButtonElement>("#clear").addEventListener("click", () => { load(""); sampl
 
 input.addEventListener("input", () => {
   sampleSelect.value = "";
+  decodeIssue = null;
   if (input.value.length > BIG) { enterBig(input.value); schedule(); return; } // a huge paste
   indexLines(input.value);
   drawGutter();

@@ -1,7 +1,7 @@
 // Plain-English summary of a message: who pays whom, how much, and when (pacs.008); what happened on the
 // account (camt.053). Everything links back to the element it came from, so the UI can jump to its line.
 import { child, children, text, attr, type XElement } from "./xml";
-import { CODES } from "./names";
+import { CODES, table } from "./names";
 
 export interface Fact { label: string; value: string; el?: XElement | null; help?: string }
 export interface Row { cells: string[]; el: XElement; tone?: "in" | "out" | "muted" }
@@ -86,18 +86,18 @@ function partyName(p: XElement | null): string | null {
 
 // ------------------------------------------------------------------ pacs.008
 
-const SETTLEMENT: Record<string, string> = {
+const SETTLEMENT: Record<string, string> = table({
   INDA: "through an account the receiving bank holds for the sender (INDA)",
   INGA: "through an account the sender holds for the receiving bank (INGA)",
   COVE: "through a separate cover payment between correspondent banks (COVE)",
   CLRG: "through a clearing system (CLRG)",
-};
-const CHARGES: Record<string, string> = {
+});
+const CHARGES: Record<string, string> = table({
   DEBT: "The payer pays all bank charges (DEBT).",
   CRED: "The payee pays all bank charges (CRED).",
   SHAR: "Charges are shared: each side pays its own bank (SHAR).",
   SLEV: "Charges follow the rules of the service level (SLEV).",
-};
+});
 
 function pacs008(doc: XElement): Summary {
   const body = child(doc, "FIToFICstmrCdtTrf");
@@ -176,17 +176,17 @@ function pacs008(doc: XElement): Summary {
 
 // ------------------------------------------------------------------ camt.053
 
-const DOMAINS: Record<string, string> = { PMNT: "Payments", ACMT: "Account management", CAMT: "Cash management", LDAS: "Loans and deposits", SECU: "Securities", FORX: "Foreign exchange", TRAD: "Trade services", XTND: "Extended" };
-const FAMILIES: Record<string, string> = {
+const DOMAINS: Record<string, string> = table({ PMNT: "Payments", ACMT: "Account management", CAMT: "Cash management", LDAS: "Loans and deposits", SECU: "Securities", FORX: "Foreign exchange", TRAD: "Trade services", XTND: "Extended" });
+const FAMILIES: Record<string, string> = table({
   RCDT: "received credit transfer", ICDT: "sent credit transfer", RDDT: "received direct debit", IDDT: "direct debit collected",
   RRCT: "received instant credit transfer", IRCT: "sent instant credit transfer", RCHQ: "received cheque", ICHQ: "issued cheque",
   CCRD: "card payment", MCRD: "card acquiring", CNTR: "counter transaction", MCOP: "other credit", MDOP: "other debit",
-};
-const SUBFAMILIES: Record<string, string> = {
+});
+const SUBFAMILIES: Record<string, string> = table({
   ESCT: "SEPA credit transfer", DMCT: "domestic credit transfer", XBCT: "cross-border credit transfer", SALA: "salary",
   STDO: "standing order", CHRG: "charges", INTR: "interest", ESDD: "SEPA direct debit", BBDD: "SEPA B2B direct debit",
   POSD: "card payment at a point of sale", CWDL: "cash withdrawal",
-};
+});
 function txCode(ntry: XElement): { code: string; meaning: string } | null {
   const d = child(ntry, "BkTxCd", "Domn");
   const domain = text(d, "Cd"), family = text(d, "Fmly", "Cd"), sub = text(d, "Fmly", "SubFmlyCd");
