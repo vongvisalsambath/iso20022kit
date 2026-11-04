@@ -54,7 +54,12 @@ async function check(name, fn) {
   }
 }
 const status = (page) => page.textContent("#status");
-const open = async (page, file) => { await page.setInputFiles("#file", file); await page.waitForFunction(() => /checked in|Not valid|Valid/.test(document.querySelector("#status")?.textContent ?? "")); };
+// Clear the status first, then wait for a new verdict: waiting on the old one raced on slow machines.
+const open = async (page, file) => {
+  await page.evaluate(() => { document.querySelector("#status").textContent = ""; });
+  await page.setInputFiles("#file", file);
+  await page.waitForFunction(() => /^(Valid|Not valid)/.test(document.querySelector("#status")?.textContent ?? ""));
+};
 
 // ---------------------------------------------------------------- happy paths
 
