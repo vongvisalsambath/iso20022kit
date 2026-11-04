@@ -73,12 +73,23 @@ string xml = CreditTransferBuilder.Create("MSG-20261104-001")
 
 The builder fills in what can be derived (number of transactions, control sum, total, a UETR for each transaction) and writes clean XML: UTF-8, the message namespace as default, no `xsi` noise.
 
+### MT103 ↔ pacs.008
+
+```csharp
+var t = MtTranslator.ToPacs008(File.ReadAllText("payment.fin"));   // or MtTranslator.ToMt103(xml)
+// t.Output, t.Notes: what was changed, inferred or lost
+```
+
+The translation runs one payment at a time, in both directions, and checks its own output. Every change it makes is listed: a truncated name, a dropped end-to-end ID, an inferred settlement method. It's built from the public field formats, not SWIFT's licensed translation rules. See [docs/mt.md](docs/mt.md).
+
 ### Command line
 
 ```
 dotnet run --project src/Iso20022Kit.Cli -- validate payment.xml statement.xml
 dotnet run --project src/Iso20022Kit.Cli -- read statement.xml --json
 dotnet run --project src/Iso20022Kit.Cli -- rules
+dotnet run --project src/Iso20022Kit.Cli -- mt2mx samples/mt/mt103.fin
+dotnet run --project src/Iso20022Kit.Cli -- mx2mt payment.xml --json
 ```
 
 `validate` exits with 0 when every file is valid, 1 when one isn't, 2 for a usage or file error, and `--json` prints the reports as JSON. It is packaged as a .NET tool named `iso20022`.
@@ -113,7 +124,7 @@ New cases are the most useful contribution: the suite was written alongside this
 - Other messages and versions. pacs.008.001.08 and camt.053.001.08 were chosen because they're the versions Fedwire and CBPR+ (cross-border payments over SWIFT) use; pacs.002, pacs.004, pacs.009, pain.001 and camt.054 would be next.
 - Scheme rules: CBPR+, SEPA, FedNow and others restrict the base message further. These checks are the ISO 20022 baseline only.
 - Lookups: whether a BIC exists, whether a date is a business day.
-- MT (SWIFT FIN) conversion.
+- MT messages other than the MT103, and SWIFT's official (licensed) MT/MX translation rules.
 
 ## Repository
 
@@ -126,7 +137,7 @@ New cases are the most useful contribution: the suite was written alongside this
 | `conformance/` | The language-neutral test suite and the runners for other libraries. |
 | `schemas/` | The official ISO 20022 XSDs (see [NOTICE](NOTICE)). |
 | `tools/SchemaModel` | Turns an XSD into the JSON model the viewer uses. |
-| `docs/` | [Validation codes](docs/rules.md) and the [library comparison](docs/comparison.md). |
+| `docs/` | [Validation codes](docs/rules.md), [MT103 translation](docs/mt.md) and the [library comparison](docs/comparison.md). |
 
 ## Licence
 
