@@ -7,7 +7,7 @@
   "type": "module",
   "scripts": {
     "build": "esbuild src/app.ts --bundle --minify --format=esm --target=es2020 --loader:.xml=text --outfile=dist/app.js && node scripts/copy.mjs",
-    "dev": "node scripts/copy.mjs && esbuild src/app.ts --bundle --format=esm --target=es2020 --loader:.xml=text --outfile=dist/app.js --servedir=dist --watch",
+    "dev": "npm run build && esbuild src/app.ts --bundle --format=esm --target=es2020 --loader:.xml=text --outfile=dist/app.js --servedir=dist --watch",
     "typecheck": "tsc --noEmit",
     "test": "esbuild test/conformance.test.ts --bundle --platform=node --format=esm --outfile=.test/conformance.mjs --log-level=warning && node --test .test/conformance.mjs"
   },

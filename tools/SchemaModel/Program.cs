@@ -8,6 +8,11 @@ using System.Xml;
 using System.Xml.Schema;
 
 var set = new XmlSchemaSet { XmlResolver = null };
+if (args.Length != 2)
+{
+    Console.Error.WriteLine("Usage: dotnet run --project tools/SchemaModel -- <schema.xsd> <model.json>");
+    Environment.Exit(2);
+}
 using (var r = XmlReader.Create(args[0], new XmlReaderSettings { DtdProcessing = DtdProcessing.Prohibit, XmlResolver = null }))
     set.Add(XmlSchema.Read(r, null)!);
 set.Compile();

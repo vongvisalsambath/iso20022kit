@@ -12,7 +12,16 @@
     <Version>0.1.0</Version>
     <Description>Command-line tool: validate and read ISO 20022 pacs.008 and camt.053 messages, and run the Iso20022Kit conformance suite.</Description>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <Authors>Vong Visalsambath</Authors>
+    <PackageTags>iso20022;payments;pacs.008;camt.053;cli;validation</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/vongvisalsambath/iso20022kit</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/vongvisalsambath/iso20022kit</PackageProjectUrl>
   </PropertyGroup>
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+    <None Include="../../NOTICE" Pack="true" PackagePath="/" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../Iso20022Kit/Iso20022Kit.csproj" />
   </ItemGroup>

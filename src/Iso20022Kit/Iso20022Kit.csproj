@@ -13,15 +13,17 @@
     <Version>0.1.0</Version>
     <Authors>Vong Visalsambath</Authors>
     <Description>Read, write and validate ISO 20022 payment messages (pacs.008 customer credit transfers and camt.053 bank statements) in .NET: types generated from the official schemas, schema validation with clear errors, and business checks such as totals, statement balances, currency decimals and IBAN check digits.</Description>
-    <PackageTags>iso20022;payments;pacs.008;camt.053;swift;banking;fedwire;fednow;sepa</PackageTags>
+    <PackageTags>iso20022;payments;pacs.008;camt.053;swift;banking;xml;validation</PackageTags>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/vongvisalsambath/iso20022kit</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/vongvisalsambath/iso20022kit</PackageProjectUrl>
   </PropertyGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="../../schemas/*.xsd" LogicalName="Iso20022Kit.Schemas.%(Filename)%(Extension)" />
     <None Include="../../README.md" Pack="true" PackagePath="/" />
+    <None Include="../../NOTICE" Pack="true" PackagePath="/" />
   </ItemGroup>
 
   <ItemGroup>

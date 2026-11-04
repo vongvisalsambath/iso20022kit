@@ -59,6 +59,8 @@ internal static class XmlInput
     public static (int? Line, int? Column) Position(XObject node)
     {
         IXmlLineInfo info = node;
-        return info.HasLineInfo() ? (info.LineNumber, info.LinePosition) : (null, null);
+        if (!info.HasLineInfo()) return (null, null);
+        // .NET points at an element's name; report the "<" before it, as editors and the browser viewer do.
+        return (info.LineNumber, node is XElement ? Math.Max(1, info.LinePosition - 1) : info.LinePosition);
     }
 }

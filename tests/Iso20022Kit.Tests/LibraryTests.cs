@@ -266,4 +266,36 @@ public class LibraryTests
             Assert.Equal(Leaves(a), Leaves(b));
         }
     }
+
+    /// <summary>The browser viewer's tests (viewer/test) pin the same positions: both point at an element's "&lt;" and an attribute's name.</summary>
+    [Theory]
+    [InlineData("pacs008-schema-bad-bic", "SCHEMA", 103, 11)]
+    [InlineData("pacs008-schema-lowercase-currency", "SCHEMA", 19, 23)]
+    [InlineData("camt053-business-eur-three-decimals", "AMOUNT-DECIMALS", 157, 9)]
+    [InlineData("camt053-business-eur-three-decimals", "CAMT053-BALANCE", 42, 7)]
+    [InlineData("unsupported-not-iso", "MSG-NO-DOCUMENT", 2, 1)]
+    public void IssuesPointAtTheSameCharacterAsTheBrowserViewer(string id, string code, int line, int column)
+    {
+        var xml = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "conformance", "cases", id + ".xml"));
+        var issue = Assert.Single(Iso20022.Validate(xml).Issues, i => i.Code == code);
+        Assert.Equal((line, column), (issue.Line, issue.Column));
+    }
+
+    /// <summary>The example in README.md, verbatim: it must build a valid message.</summary>
+    [Fact]
+    public void TheReadmeExampleBuildsAValidMessage()
+    {
+        string xml = CreditTransferBuilder.Create("MSG-20261104-001")
+            .Settlement(SettlementMethod.ClearingSystem, "FDW")
+            .InstructingAgent("TSTAKHPP")
+            .AddTransaction(t => t
+                .EndToEndId("INV-445")
+                .Amount(1000.00m, "USD", new DateOnly(2026, 11, 4))
+                .Charges(ChargeBearer.Shared)
+                .Debtor("Sokha Chan", account: "001234567", agentBic: "TSTAKHPP", country: "KH")
+                .Creditor("Oxford Books Ltd", iban: "GB82WEST12345698765432", agentBic: "DEMOGB2L")
+                .Remittance("Invoice 445"))
+            .ToXml();
+        Assert.True(Iso20022.Validate(xml).IsValid);
+    }
 }
