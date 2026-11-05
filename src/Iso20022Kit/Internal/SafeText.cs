@@ -77,6 +77,22 @@ internal static class SafeText
         return $"{head}…({(s.Length - head.Length - tail.Length).ToString("N0", CultureInfo.InvariantCulture)} characters omitted)…{tail}";
     }
 
+    /// <summary>A short quotation of untrusted text: in quotes, at most <paramref name="max"/> characters, with hidden characters and line breaks escaped.</summary>
+    public static string Quote(string? text, int max = 60)
+    {
+        if (text is null) return "(none)";
+        var sb = new StringBuilder("\"");
+        var n = 0;
+        for (var i = 0; i < text.Length; i++)
+        {
+            if (++n > max) { sb.Append('…'); break; }
+            var ch = text[i];
+            if (char.IsHighSurrogate(ch) && i + 1 < text.Length && char.IsLowSurrogate(text[i + 1])) { sb.Append(ch).Append(text[++i]); continue; }
+            sb.Append(char.IsSurrogate(ch) || IsHidden(ch) || ch is '\t' or '\n' or '\r' ? Escape(ch) : ch.ToString());
+        }
+        return sb.Append('"').ToString();
+    }
+
     private static string SafeCut(string s, int start, int length)
     {
         if (start > 0 && char.IsLowSurrogate(s[start])) { start++; length--; }
