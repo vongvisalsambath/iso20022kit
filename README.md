@@ -10,6 +10,15 @@ It comes in three parts that give the same answers:
 
 All sample data is made up.
 
+## Install
+
+On NuGet: [Iso20022Kit](https://www.nuget.org/packages/Iso20022Kit) · [Iso20022Kit.Cli](https://www.nuget.org/packages/Iso20022Kit.Cli). For .NET 8 and .NET 10.
+
+```sh
+dotnet add package Iso20022Kit
+dotnet tool install --global Iso20022Kit.Cli   # the `iso20022` command
+```
+
 ## Why
 
 ISO 20022 has replaced the old SWIFT MT format for cross-border payments, and Fedwire, CHAPS, the Eurosystem's T2 and many domestic systems now use it too. The schemas tell you whether a message is *shaped* right, but not whether it *adds up*: a pacs.008 can match the XSD perfectly while its total disagrees with its transactions, and a camt.053 can be valid while its closing balance doesn't follow from its entries. Error messages from schema validators are also hard to read (`The element 'CdtTrfTxInf' has invalid child element 'Cdtr'…`).
@@ -23,8 +32,6 @@ INVALID pacs008-business-control-sum.xml (pacs.008.001.08)
 ```
 
 ## .NET
-
-> Not on NuGet yet. Build from source: `dotnet build`, or reference `src/Iso20022Kit/Iso20022Kit.csproj`.
 
 ### Validate
 
